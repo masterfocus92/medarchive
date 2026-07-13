@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дизайн-кит — Семейная медкарта</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     ТОКЕНЫ — единственный источник истины.
+     Агент использует только их. Сырых значений в экранах нет.
+     ============================================================ */
+  :root {
+    /* Цвет: бумага / чернила / карандаш */
+    --paper:       #F4F2EC;  /* фон — лист на столе */
+    --sheet:       #FCFBF8;  /* поднятая поверхность — карточка */
+    --ink:         #1E1C19;  /* чернила — основной текст, факты */
+    --ink-strong:  #262B33;  /* тёмно-синие чернила — первичное действие */
+    --pencil:      #6B665D;  /* карандаш — второстепенный текст, пометки */
+    --pencil-soft: #9A948A;  /* бледный карандаш — подписи, плейсхолдеры */
+    --rule:        #DAD6CB;  /* линовка — тонкие разделители, рамки */
+    --rule-soft:   #E7E3D9;  /* очень бледная линовка */
+    --ink-blue:    #2E4B7A;  /* синие чернила — ссылки, фокус */
+    --red-pen:     #8E3B33;  /* красный карандаш — ошибка, удаление */
+    --green-ink:   #4A6350;  /* зелёные чернила — подтверждение */
+
+    /* Типографика */
+    --serif: "Source Serif 4", Georgia, serif;      /* заголовки, названия записей */
+    --sans:  "Inter", system-ui, sans-serif;         /* интерфейс, тело, формы */
+    --mono:  "JetBrains Mono", ui-monospace, monospace; /* данные: даты, измерения */
+
+    /* Шкала размеров */
+    --t-caption: 0.75rem;   /* 12 */
+    --t-small:   0.8125rem; /* 13 */
+    --t-body:    0.9375rem; /* 15 */
+    --t-lead:    1.0625rem; /* 17 */
+    --t-h3:      1.25rem;   /* 20 */
+    --t-h2:      1.625rem;  /* 26 */
+    --t-h1:      2.125rem;  /* 34 */
+
+    /* Отступы (шаг 4px) */
+    --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+    --s5: 24px; --s6: 32px; --s7: 48px;
+
+    /* Форма */
+    --radius:   4px;   /* карточки, поля — крепкие углы, как у бланка */
+    --radius-sm: 3px;
+    --hair: 1px solid var(--rule);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding: var(--s6) var(--s4);
+  }
+
+  .wrap { max-width: 780px; margin: 0 auto; }
+
+  /* ---------- Строительная документация кита ---------- */
+  .kit-head { margin-bottom: var(--s7); border-bottom: 2px solid var(--ink); padding-bottom: var(--s4); }
+  .kit-head h1 {
+    font-family: var(--serif); font-weight: 600; font-size: var(--t-h1);
+    letter-spacing: -0.01em; line-height: 1.1;
+  }
+  .kit-head p {
+    color: var(--pencil); font-size: var(--t-small); margin-top: var(--s2);
+    font-family: var(--mono);
+  }
+
+  section { margin-bottom: var(--s7); }
+  .sec-label {
+    font-family: var(--mono); font-size: var(--t-caption);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--pencil-soft);
+    padding-bottom: var(--s2); margin-bottom: var(--s4);
+    border-bottom: var(--hair);
+  }
+  .note { color: var(--pencil); font-size: var(--t-small); margin-top: var(--s3); font-style: italic; }
+  .row { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: flex-start; }
+
+  /* ============================================================
+     ПАЛИТРА
+     ============================================================ */
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s3); }
+  .swatch { border: var(--hair); border-radius: var(--radius); overflow: hidden; background: var(--sheet); }
+  .swatch .chip { height: 56px; }
+  .swatch .meta { padding: var(--s2) var(--s3); }
+  .swatch .name { font-size: var(--t-small); font-weight: 500; }
+  .swatch .hex { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil); }
+
+  /* ============================================================
+     ТИПОГРАФИКА
+     ============================================================ */
+  .type-row { padding: var(--s3) 0; border-bottom: var(--hair); display: flex; justify-content: space-between; align-items: baseline; gap: var(--s4); }
+  .type-row:last-child { border-bottom: none; }
+  .type-tag { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); white-space: nowrap; }
+  .d-h1 { font-family: var(--serif); font-size: var(--t-h1); font-weight: 600; letter-spacing: -0.01em; }
+  .d-h2 { font-family: var(--serif); font-size: var(--t-h2); font-weight: 600; }
+  .d-h3 { font-family: var(--serif); font-size: var(--t-h3); font-weight: 600; }
+  .d-lead { font-size: var(--t-lead); }
+  .d-body { font-size: var(--t-body); }
+  .d-small { font-size: var(--t-small); color: var(--pencil); }
+  .d-data { font-family: var(--mono); font-size: var(--t-body); }
+
+  /* ============================================================
+     ПРИМИТИВЫ
+     ============================================================ */
+
+  /* --- Кнопки --- */
+  .btn {
+    font-family: var(--sans); font-size: var(--t-body); font-weight: 500;
+    padding: 10px var(--s4); border-radius: var(--radius-sm);
+    border: 1px solid transparent; cursor: pointer;
+    line-height: 1; transition: background .12s ease, border-color .12s ease;
+  }
+  .btn:focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
+  .btn-primary { background: var(--ink-strong); color: var(--sheet); }
+  .btn-primary:hover { background: #1a1f26; }
+  .btn-secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
+  .btn-secondary:hover { border-color: var(--pencil); }
+  .btn-quiet { background: transparent; color: var(--ink-blue); padding-left: var(--s2); padding-right: var(--s2); }
+  .btn-quiet:hover { text-decoration: underline; }
+  .btn-danger { background: transparent; color: var(--red-pen); border-color: color-mix(in srgb, var(--red-pen) 35%, transparent); }
+  .btn-danger:hover { background: color-mix(in srgb, var(--red-pen) 8%, transparent); }
+  .btn-lg { font-size: var(--t-lead); padding: 14px var(--s5); }
+
+  /* --- Поле (label + control + helper/error) --- */
+  .field { margin-bottom: var(--s4); max-width: 380px; }
+  .field label { display: block; font-size: var(--t-small); font-weight: 500; margin-bottom: var(--s2); }
+  .field .opt { color: var(--pencil-soft); font-weight: 400; }
+  .control {
+    width: 100%; font-family: var(--sans); font-size: var(--t-body); color: var(--ink);
+    background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-sm);
+    padding: 10px var(--s3);
+  }
+  .control::placeholder { color: var(--pencil-soft); }
+  .control:focus { outline: none; border-color: var(--ink-blue); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink-blue) 18%, transparent); }
+  .helper { font-size: var(--t-caption); color: var(--pencil); margin-top: var(--s1); }
+  .field.error .control { border-color: var(--red-pen); }
+  .field.error .helper { color: var(--red-pen); }
+
+  /* Данные вводятся моноширинным — «записано в бланк» */
+  .control.data { font-family: var(--mono); }
+
+  /* --- Карандашная заметка (комментарий-аннотация) --- */
+  .pencil-note {
+    font-family: var(--serif); font-style: italic; color: var(--pencil);
+    border-left: 2px solid var(--rule); padding: var(--s1) 0 var(--s1) var(--s3);
+    font-size: var(--t-body); line-height: 1.5;
+  }
+  textarea.control.pencil { font-family: var(--serif); font-style: italic; color: var(--pencil); min-height: 76px; resize: vertical; }
+
+  /* --- Чип (тип записи — открытое поле) --- */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: var(--t-caption); letter-spacing: 0.02em;
+    color: var(--pencil); background: transparent;
+    border: 1px solid var(--rule); border-radius: 999px;
+    padding: 4px 10px; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--pencil); }
+  .chip[aria-selected="true"] { color: var(--sheet); background: var(--ink); border-color: var(--ink); }
+
+  /* --- Монограмма члена семьи (без картинок — инициалы) --- */
+  .mono-badge {
+    width: 40px; height: 40px; border-radius: 999px;
+    border: 1px solid var(--rule); background: var(--sheet);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-weight: 600; font-size: var(--t-body); color: var(--ink);
+  }
+  .switcher { display: flex; gap: var(--s2); align-items: center; }
+  .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); }
+  .switcher .who span { font-size: var(--t-caption); color: var(--pencil); }
+  .switcher .who[aria-selected="true"] .mono-badge { border-color: var(--ink); border-width: 2px; }
+  .switcher .who[aria-selected="true"] span { color: var(--ink); font-weight: 500; }
+
+  /* --- Карточка / лист --- */
+  .card { background: var(--sheet); border: var(--hair); border-radius: var(--radius); padding: var(--s4); }
+
+  /* --- Запись (композиция примитивов — signature) --- */
+  .record { background: var(--sheet); border: var(--hair); border-radius: var(--radius); overflow: hidden; }
+  .record .rec-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: var(--s4); border-bottom: var(--hair);
+  }
+  .record .rec-title { font-family: var(--serif); font-size: var(--t-h3); font-weight: 600; }
+  .record .rec-date { font-family: var(--mono); font-size: var(--t-small); color: var(--pencil); }
+  .record .rec-body { padding: var(--s4); }
+  .rec-meta { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-bottom: var(--s3); }
+  .rec-meta .m { display: flex; flex-direction: column; }
+  .rec-meta .m .k { font-size: var(--t-caption); color: var(--pencil-soft); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); }
+  .rec-meta .m .v { font-size: var(--t-body); }
+  .rec-content { color: var(--ink); font-size: var(--t-body); padding: var(--s3) 0; border-top: var(--rule-soft) 1px dashed; }
+  .rec-actions { display: flex; gap: var(--s2); padding: var(--s3) var(--s4); border-top: var(--hair); background: color-mix(in srgb, var(--paper) 40%, transparent); }
+
+  /* --- Пустой экран — приглашение к действию --- */
+  .empty { text-align: center; padding: var(--s7) var(--s4); border: 1px dashed var(--rule); border-radius: var(--radius); }
+  .empty h3 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h3); margin-bottom: var(--s2); }
+  .empty p { color: var(--pencil); max-width: 320px; margin: 0 auto var(--s4); font-size: var(--t-small); }
+
+  /* --- Подтверждение (toast) --- */
+  .toast {
+    display: inline-flex; align-items: center; gap: var(--s2);
+    background: var(--ink); color: var(--sheet); font-size: var(--t-small);
+    padding: 10px var(--s4); border-radius: var(--radius-sm);
+  }
+  .toast .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--green-ink); }
+
+  /* --- Шаги потока (реальная последовательность → нумерация оправдана) --- */
+  .steps { display: flex; gap: var(--s4); flex-wrap: wrap; }
+  .step { flex: 1; min-width: 160px; }
+  .step .n { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); border-bottom: 1px solid var(--rule); padding-bottom: var(--s1); margin-bottom: var(--s2); }
+  .step .t { font-family: var(--serif); font-size: var(--t-lead); font-weight: 600; margin-bottom: var(--s1); }
+  .step .d { font-size: var(--t-small); color: var(--pencil); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (max-width: 520px) { body { padding: var(--s4) var(--s3); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kit-head">
+    <h1>Семейная медкарта — дизайн-кит</h1>
+    <p>POC · бумага · чернила · карандаш · чернила = факты, карандаш = пометки, красный = правка</p>
+  </div>
+
+  <!-- ПАЛИТРА -->
+  <section>
+    <div class="sec-label">Палитра</div>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#F4F2EC"></div><div class="meta"><div class="name">Бумага (фон)</div><div class="hex">#F4F2EC</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#FCFBF8"></div><div class="meta"><div class="name">Лист (карточка)</div><div class="hex">#FCFBF8</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#1E1C19"></div><div class="meta"><div class="name">Чернила (текст)</div><div class="hex">#1E1C19</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#262B33"></div><div class="meta"><div class="name">Тёмные чернила (действие)</div><div class="hex">#262B33</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#6B665D"></div><div class="meta"><div class="name">Карандаш (пометки)</div><div class="hex">#6B665D</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#DAD6CB"></div><div class="meta"><div class="name">Линовка (рамки)</div><div class="hex">#DAD6CB</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#2E4B7A"></div><div class="meta"><div class="name">Синие чернила (фокус)</div><div class="hex">#2E4B7A</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#8E3B33"></div><div class="meta"><div class="name">Красный карандаш (ошибка)</div><div class="hex">#8E3B33</div></div></div>
+    </div>
+    <p class="note">Акцент — синие чернила, используется только для фокуса и ссылок. Красный — только ошибка и удаление. Никаких других цветов в системе нет.</p>
+  </section>
+
+  <!-- ТИПОГРАФИКА -->
+  <section>
+    <div class="sec-label">Типографика</div>
+    <div class="type-row"><div class="d-h1">Медкарта семьи</div><div class="type-tag">Serif 34 / 600</div></div>
+    <div class="type-row"><div class="d-h2">Приём у кардиолога</div><div class="type-tag">Serif 26 / 600</div></div>
+    <div class="type-row"><div class="d-h3">Общий анализ крови</div><div class="type-tag">Serif 20 / 600</div></div>
+    <div class="type-row"><div class="d-lead">Крупный текст для важного</div><div class="type-tag">Sans 17</div></div>
+    <div class="type-row"><div class="d-body">Основной текст интерфейса и содержания документа</div><div class="type-tag">Sans 15</div></div>
+    <div class="type-row"><div class="d-small">Второстепенная подпись</div><div class="type-tag">Sans 13</div></div>
+    <div class="type-row"><div class="d-data">12.03.2026 · 5400 г · 58 см</div><div class="type-tag">Mono — данные</div></div>
+    <p class="note">Serif — заголовки и названия записей. Sans — интерфейс и формы (максимальная читаемость). Mono — даты и измерения, читаются как «записано в бланк».</p>
+  </section>
+
+  <!-- КНОПКИ -->
+  <section>
+    <div class="sec-label">Кнопки</div>
+    <div class="row">
+      <button class="btn btn-primary">Сохранить</button>
+      <button class="btn btn-secondary">Отмена</button>
+      <button class="btn btn-quiet">Поправить поле</button>
+      <button class="btn btn-danger">Удалить запись</button>
+    </div>
+    <div class="row" style="margin-top:var(--s4)">
+      <button class="btn btn-primary btn-lg">Добавить запись</button>
+    </div>
+    <p class="note">Первичное действие — тёмные чернила, одно на экран. Удаление — красным, всегда обособлено. Название действия сохраняется через весь флоу: «Сохранить» → «Сохранено».</p>
+  </section>
+
+  <!-- ПОЛЯ -->
+  <section>
+    <div class="sec-label">Поля ввода</div>
+    <div class="field">
+      <label>Название документа <span class="opt">— необязательно</span></label>
+      <input class="control" type="text" placeholder="Например, Выписка из стационара">
+      <div class="helper">AI подставит из документа. Можно оставить пустым.</div>
+    </div>
+    <div class="field">
+      <label>Дата события</label>
+      <input class="control data" type="text" value="12.03.2026">
+      <div class="helper">Когда документ датирован, а не когда внесён.</div>
+    </div>
+    <div class="field error">
+      <label>Дата события</label>
+      <input class="control data" type="text" value="32.13.2026">
+      <div class="helper">Такой даты нет. Проверьте день и месяц.</div>
+    </div>
+    <p class="note">Ошибка не извиняется и говорит, что делать. Данные (даты, числа) — моноширинным шрифтом.</p>
+  </section>
+
+  <!-- КОММЕНТАРИЙ = КАРАНДАШ -->
+  <section>
+    <div class="sec-label">Комментарий — «карандашная» заметка</div>
+    <div class="field">
+      <label>Ваша пометка <span class="opt">— чего нет в документе</span></label>
+      <textarea class="control pencil" placeholder="Понравился врач. Сказал прийти через месяц…"></textarea>
+    </div>
+    <div style="max-width:420px">
+      <div class="pencil-note">Врач хороший, спокойный. Просил не забыть про повторный анализ через 3 недели.</div>
+    </div>
+    <p class="note">Комментарий визуально отделён от фактов: карандашный серый курсив, как заметка на полях. Так глаз сразу отличает «что в документе» от «что от себя».</p>
+  </section>
+
+  <!-- ТИПЫ (ЧИПЫ) -->
+  <section>
+    <div class="sec-label">Тип записи — открытое поле</div>
+    <div class="row">
+      <span class="chip" aria-selected="true">анализ</span>
+      <span class="chip">выписка</span>
+      <span class="chip">рецепт</span>
+      <span class="chip">заключение</span>
+      <span class="chip">осмотр</span>
+      <span class="chip">вакцинация</span>
+      <span class="chip">+ свой тип</span>
+    </div>
+    <p class="note">Частые типы — для быстрого выбора. Но список открытый: можно вписать свой или не указывать. Ни один документ не должен упереться в отсутствие категории.</p>
+  </section>
+
+  <!-- ПЕРЕКЛЮЧАТЕЛЬ ЧЛЕНОВ СЕМЬИ -->
+  <section>
+    <div class="sec-label">Переключатель профиля — без картинок, инициалы</div>
+    <div class="switcher">
+      <div class="who" aria-selected="true"><div class="mono-badge">Д</div><span>Дмитрий</span></div>
+      <div class="who"><div class="mono-badge">М</div><span>Мария</span></div>
+      <div class="who"><div class="mono-badge">А</div><span>Аня</span></div>
+    </div>
+    <p class="note">Монограмма из инициала вместо фото — в духе бумаги и без изображений. Активный профиль обведён чернилами.</p>
+  </section>
+
+  <!-- ЗАПИСЬ (КОМПОЗИЦИЯ) -->
+  <section>
+    <div class="sec-label">Запись — сборка из примитивов (signature)</div>
+    <div class="record">
+      <div class="rec-head">
+        <div class="rec-title">Общий анализ крови</div>
+        <div class="rec-date">12.03.2026</div>
+      </div>
+      <div class="rec-body">
+        <div class="rec-meta">
+          <div class="m"><div class="k">Пациент</div><div class="v">Аня</div></div>
+          <div class="m"><div class="k">Клиника</div><div class="v">Инвитро</div></div>
+          <div class="m"><div class="k">Врач</div><div class="v">—</div></div>
+          <div class="m"><div class="k">Тип</div><div class="v">анализ</div></div>
+        </div>
+        <div class="rec-content">Гемоглобин, эритроциты, лейкоцитарная формула. Все показатели в пределах референса лаборатории.</div>
+        <div class="pencil-note" style="margin-top:var(--s3)">Пересдать через 3 недели — просил педиатр.</div>
+      </div>
+      <div class="rec-actions">
+        <button class="btn btn-secondary">Открыть файл</button>
+        <button class="btn btn-quiet">Редактировать</button>
+        <button class="btn btn-danger" style="margin-left:auto">Удалить</button>
+      </div>
+    </div>
+    <p class="note">Факты — чернилами. Пометка — карандашом. Удаление — красным и отодвинуто вправо, чтобы не нажать случайно.</p>
+  </section>
+
+  <!-- ПОТОК ВВОДА -->
+  <section>
+    <div class="sec-label">Поток добавления — реальная последовательность</div>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><div class="t">Снимок</div><div class="d">Фото или PDF. Файл уже сохранён.</div></div>
+      <div class="step"><div class="n">02</div><div class="t">Разбор</div><div class="d">AI разложил по полям. Взгляд, правка при нужде.</div></div>
+      <div class="step"><div class="n">03</div><div class="t">Готово</div><div class="d">Один тап — запись в карте.</div></div>
+    </div>
+    <p class="note">Нумерация оправдана: это настоящий порядок шагов. Файл сохраняется на шаге 01 — провал разбора не отменяет сохранение.</p>
+  </section>
+
+  <!-- ПУСТОЙ ЭКРАН + ПОДТВЕРЖДЕНИЕ -->
+  <section>
+    <div class="sec-label">Пустой экран и подтверждение</div>
+    <div class="empty">
+      <h3>Здесь пока пусто</h3>
+      <p>Сфотографируйте выписку, результат анализа или рецепт — остальное подставится само.</p>
+      <button class="btn btn-primary btn-lg">Добавить первую запись</button>
+    </div>
+    <div style="margin-top:var(--s4)">
+      <span class="toast"><span class="dot"></span> Запись сохранена</span>
+    </div>
+    <p class="note">Пустой экран — приглашение действовать, а не заглушка. Подтверждение короткое, зелёными чернилами.</p>
+  </section>
+
+  <div class="kit-head" style="border-bottom:none; border-top:2px solid var(--ink); margin-top:var(--s7); margin-bottom:0; padding-top:var(--s4);">
+    <p style="font-style:normal">Все экраны собираются только из этих примитивов и токенов. Новый примитив вводится осознанно, а не по ходу.</p>
+  </div>
+
+</div>
+</body>
+</html>
