@@ -1,0 +1,48 @@
+[project]
+name = "medarchive"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18.5",
+    "anthropic>=0.116.0",
+    "fastapi>=0.139.0",
+    "jinja2>=3.1.6",
+    "passlib[bcrypt]>=1.7.4",
+    "pgvector>=0.5.0",
+    "psycopg[binary]>=3.3.4",
+    "pydantic-settings>=2.14.2",
+    "python-multipart>=0.0.32",
+    "sqlalchemy>=2.0.51",
+    "uvicorn>=0.51.0",
+]
+
+[tool.pytest.ini_options]
+# Корень проекта в sys.path: пакет app не устанавливается в venv,
+# тесты импортируют его прямо из рабочей копии.
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/F — базовые ошибки и pyflakes, I — сортировка импортов,
+# UP — современный синтаксис под 3.12, B — ловушки-багоприманки (bugbear).
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Миграции пишет генератор Alembic и складывает constraints в длинные
+# строки — переформатировать каждую руками ради E501 непродуктивно.
+# Остальные правила (импорты, синтаксис) к миграциям применяются.
+"alembic/versions/*" = ["E501"]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.5.0",
+    "pre-commit>=4.6.0",
+    "pytest>=9.1.1",
+    "ruff>=0.15.21",
+]

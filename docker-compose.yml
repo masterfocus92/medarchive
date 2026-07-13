@@ -1,0 +1,25 @@
+# Локальная БД разработки. Образ pgvector/pgvector — официальный образ
+# проекта pgvector: стандартный postgres:16 расширения vector не содержит.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      # Дефолты совпадают с .env.example — окружение поднимается
+      # без ручной настройки; .env позволяет переопределить.
+      POSTGRES_USER: ${POSTGRES_USER:-medcard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medcard}
+      POSTGRES_DB: ${POSTGRES_DB:-medcard}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Именованный volume, не анонимный: данные обязаны переживать
+      # пересоздание контейнера (критерий приёмки T1.1-INFRA).
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medcard} -d ${POSTGRES_DB:-medcard}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:

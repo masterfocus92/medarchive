@@ -1,0 +1,16 @@
+# Хуки локальные (language: system), а не из репозитория ruff-pre-commit:
+# так линтер всегда той версии, что закреплена в uv.lock проекта,
+# и не бывает расхождения «pre-commit ругается, а uv run ruff — нет».
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]

@@ -1,0 +1,25 @@
+# Окружение и секреты
+.env
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Кэши инструментов
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Данные приложения (файлы записей — не для git)
+files/
+
+# ОС и редакторы
+.DS_Store
+.idea/
+.vscode/
