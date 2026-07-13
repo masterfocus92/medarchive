@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     в непонятном месте.
     """
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    # extra="ignore": в .env лежат и переменные для docker compose
+    # (POSTGRES_*) — приложению они не нужны, но валить старт не должны.
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     database_url: str
     files_dir: Path
@@ -53,7 +55,7 @@ class SeedSettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env.seed", env_file_encoding="utf-8", env_prefix="SEED_"
+        env_file=".env.seed", env_file_encoding="utf-8", env_prefix="SEED_", extra="ignore"
     )
 
     adult1_full_name: str

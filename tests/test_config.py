@@ -40,6 +40,24 @@ def test_missing_files_dir_fails_loudly(monkeypatch):
     assert "files_dir" in str(exc_info.value).lower()
 
 
+def test_ignores_extra_env_keys(tmp_path, monkeypatch):
+    # Регрессия: в .env лежат и ключи для docker compose (POSTGRES_*) —
+    # они не должны валить старт приложения (extra="ignore").
+    env_file = tmp_path / ".env"
+    env_file.write_text(
+        "DATABASE_URL=postgresql+psycopg://u:p@localhost:5432/db\n"
+        "FILES_DIR=./files\n"
+        "POSTGRES_USER=medcard\n"
+        "POSTGRES_PASSWORD=medcard\n"
+        "POSTGRES_DB=medcard\n",
+        encoding="utf-8",
+    )
+
+    settings = Settings(_env_file=env_file)
+
+    assert settings.database_url.endswith("/db")
+
+
 def test_reads_values_from_environment(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/db")
     monkeypatch.setenv("FILES_DIR", "./files")
