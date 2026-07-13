@@ -1,20 +1,14 @@
 """Интеграционные тесты доменных моделей и миграций (T1.3-BE).
 
-Требуют поднятой БД разработки (docker compose up -d). Если БД недоступна —
-тесты пропускаются с подсказкой, а не краснеют: красный прогон должен
-означать дефект кода, а не невключённый docker.
-
-Тесты работают в отдельных БД (medcard_test*), основная medcard не трогается.
+Общая инфраструктура (тестовые БД, alembic, skip без docker) — conftest.py.
 Constraints проверяются на настоящем Postgres, не на SQLite: уникальности,
 server_default и CHECK — ровно то, что подменой диалекта не проверить.
 """
 
-import os
 from datetime import date
 
-import psycopg
 import pytest
-from alembic.config import Config
+from conftest import alembic_config, db_url, drop_db, recreate_db
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -23,56 +17,17 @@ from alembic import command
 from app.models.family import Account, Family, FamilyMember
 from app.models.record import HealthRecord, RecordFile
 
-# Креды — как у docker-compose: дефолты совпадают с .env.example,
-# переопределяются тем же окружением, что читает compose.
-PG_USER = os.environ.get("POSTGRES_USER", "medcard")
-PG_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "medcard")
-PG_HOST = "localhost:5432"
-
-ADMIN_URL = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}/postgres"
 TEST_DB = "medcard_test"
 MIGRATION_TEST_DB = "medcard_test_migration"
 
 DOMAIN_TABLES = {"families", "family_members", "accounts", "health_records", "record_files"}
 
 
-def _db_url(name: str) -> str:
-    return f"postgresql+psycopg://{PG_USER}:{PG_PASSWORD}@{PG_HOST}/{name}"
-
-
-def _alembic_config(db_url: str) -> Config:
-    # URL передаётся явно, чтобы миграции шли в тестовую БД,
-    # а не в medcard из настроек приложения.
-    config = Config("alembic.ini")
-    config.set_main_option("sqlalchemy.url", db_url)
-    return config
-
-
-@pytest.fixture(scope="module")
-def admin_conn():
-    """Соединение с служебной БД postgres для создания/удаления тестовых БД."""
-    try:
-        conn = psycopg.connect(ADMIN_URL, autocommit=True, connect_timeout=2)
-    except psycopg.OperationalError:
-        pytest.skip("БД недоступна. Подними её: docker compose up -d")
-    yield conn
-    conn.close()
-
-
-def _recreate_db(admin_conn, name: str) -> None:
-    admin_conn.execute(f"DROP DATABASE IF EXISTS {name} WITH (FORCE)")
-    admin_conn.execute(f"CREATE DATABASE {name}")
-
-
-def _drop_db(admin_conn, name: str) -> None:
-    admin_conn.execute(f"DROP DATABASE IF EXISTS {name} WITH (FORCE)")
-
-
 def test_migration_cycle_up_down_up(admin_conn):
     """Критерий приёмки: upgrade → downgrade без остатка → повторный upgrade."""
-    _recreate_db(admin_conn, MIGRATION_TEST_DB)
-    url = _db_url(MIGRATION_TEST_DB)
-    config = _alembic_config(url)
+    recreate_db(admin_conn, MIGRATION_TEST_DB)
+    url = db_url(MIGRATION_TEST_DB)
+    config = alembic_config(url)
     engine = create_engine(url)
     try:
         command.upgrade(config, "head")
@@ -87,19 +42,19 @@ def test_migration_cycle_up_down_up(admin_conn):
         assert DOMAIN_TABLES <= set(inspect(engine).get_table_names())
     finally:
         engine.dispose()
-        _drop_db(admin_conn, MIGRATION_TEST_DB)
+        drop_db(admin_conn, MIGRATION_TEST_DB)
 
 
 @pytest.fixture(scope="module")
 def engine(admin_conn):
     """Чистая тестовая БД, схема — реальной миграцией, не create_all:
     тесты проверяют то, что уедет на сервер, а не метаданные моделей."""
-    _recreate_db(admin_conn, TEST_DB)
-    command.upgrade(_alembic_config(_db_url(TEST_DB)), "head")
-    eng = create_engine(_db_url(TEST_DB))
+    recreate_db(admin_conn, TEST_DB)
+    command.upgrade(alembic_config(db_url(TEST_DB)), "head")
+    eng = create_engine(db_url(TEST_DB))
     yield eng
     eng.dispose()
-    _drop_db(admin_conn, TEST_DB)
+    drop_db(admin_conn, TEST_DB)
 
 
 @pytest.fixture

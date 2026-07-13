@@ -13,3 +13,4 @@
 | [ADR-006](ADR-006-authorship-via-account.md) | Авторство и админство — свойства учётной записи (структурные инварианты) | принято |
 | [ADR-007](ADR-007-sync-sqlalchemy.md) | Синхронный SQLAlchemy; роуты с БД — `def`, не `async def` | принято |
 | [ADR-008](ADR-008-self-hosted-fonts.md) | Шрифты self-hosted (woff2 в статике), не с CDN | принято |
+| [ADR-009](ADR-009-seed-data-outside-git.md) | Данные seed вне git: код версионируется, данные — нет | принято |
