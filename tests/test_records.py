@@ -166,6 +166,70 @@ def test_new_record_form_renders(client):
     assert 'name="patient_id"' in response.text
 
 
+# ---------- T3.4: вёрстка экрана добавления ----------
+
+
+def test_form_has_both_content_flows(client):
+    """Поток К и поток Ф (flows §4а): камера и пикер — оба настоящие
+    input[name=files]: без JS форма полностью работоспособна."""
+    html = client.get("/records/new").text
+
+    camera = html.split('id="camera-input"')[1].split(">")[0]
+    assert 'capture="environment"' in camera
+    assert 'name="files"' in camera
+
+    picker = html.split('id="picker-input"')[1].split(">")[0]
+    assert "multiple" in picker
+    assert 'name="files"' in picker
+    assert "application/pdf" in picker
+
+    # JS-улучшение подключено; кнопки потоков скрыты до его загрузки.
+    assert "/static/js/record-form.js" in html
+    assert "Сфотографировать" in html
+    assert "Выбрать из галереи или файл" in html
+
+
+def test_form_design_contract(client):
+    html = client.get("/records/new").text
+
+    assert html.count("btn-primary") == 1  # одна первичная — «Сохранить»
+    assert "Сохранить" in html
+    assert "Отмена" in html
+    assert 'class="control pencil"' in html  # заметка — карандаш
+    assert html.count('name="patient_id"') >= 2  # выбор пациента — радио по членам
+    assert "checked" in html  # активный профиль предвыбран (❓3)
+
+
+def test_index_has_add_record_button_in_both_states(client, db_setup):
+    _, ids = db_setup
+
+    # Состояние со счётчиком (записи ребёнка создавались тестами выше).
+    client.post(f"/profile/{ids['child']}")
+    with_records = client.get("/").text
+    assert 'href="/records/new"' in with_records
+
+    # Пустое состояние (у оператора записей нет).
+    operator_id = next(
+        int(part.split('"')[0])
+        for part in with_records.split('action="/profile/')[1:]
+        if int(part.split('"')[0]) not in (ids["child"], ids["stranger"])
+    )
+    client.post(f"/profile/{operator_id}")
+    empty_state = client.get("/").text
+    assert 'class="empty"' in empty_state
+    assert 'href="/records/new"' in empty_state
+
+
+def test_toast_uses_kit_primitive(client, db_setup):
+    _, ids = db_setup
+    _post_record(client, ids, comment="заметка для примитива тоста")
+
+    html = client.get("/").text
+
+    assert 'class="toast"' in html
+    assert 'class="dot"' in html
+
+
 def test_photo_with_note_creates_uploaded_record(client, db_setup, files_dir, counts):
     engine, ids = db_setup
 

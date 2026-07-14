@@ -2,12 +2,14 @@
 
 {% block title %}Новая запись — Семейная медкарта{% endblock %}
 
+{% block head %}
+<script src="{{ url_for('static', path='js/record-form.js') }}" defer></script>
+{% endblock %}
+
 {% block content %}
-{# Минимальная работающая форма по контракту T3.2-BE.
-   Оба потока контента (камера/пикер), превью и JS — scope T3.4-FE. #}
 <h1>Новая запись</h1>
 
-<form method="post" action="/records" enctype="multipart/form-data">
+<form method="post" action="/records" enctype="multipart/form-data" id="record-form">
   {% if error %}
   <div class="field error">
     <p class="helper" role="alert">{{ error }}</p>
@@ -15,9 +17,19 @@
   {% endif %}
 
   <div class="field">
-    <label for="f-files">Фото или файл документа</label>
-    <input class="control" id="f-files" name="files" type="file" multiple
+    <label>Документ</label>
+    {# Оба входа — настоящие input[name=files]: без JS форма полностью
+       работоспособна (камера — один кадр, пикер — мультивыбор).
+       С JS инпуты прячутся, кнопки берут управление (поток К и Ф). #}
+    <input class="control" type="file" id="camera-input" name="files"
+      accept="image/*" capture="environment">
+    <input class="control" type="file" id="picker-input" name="files" multiple
       accept="image/jpeg,image/png,image/webp,image/heic,application/pdf">
+    <div class="file-actions" id="file-actions" hidden>
+      <button type="button" class="btn btn-secondary" id="camera-btn">Сфотографировать</button>
+      <button type="button" class="btn btn-secondary" id="picker-btn">Выбрать из галереи или файл</button>
+    </div>
+    <ul class="pages" id="pages"></ul>
     <div class="helper">Можно несколько страниц: фото или PDF, до 20 МБ каждый.</div>
   </div>
 
@@ -29,15 +41,20 @@
 
   <div class="field">
     <label>Чья запись</label>
-    {% for member in members %}
-    <label>
-      <input type="radio" name="patient_id" value="{{ member.id }}"
-        {% if member.is_active %}checked{% endif %}>
-      {{ member.first_name }}
-    </label>
-    {% endfor %}
+    {# Радио без JS: активный профиль предвыбран (❓3), смена — один тап. #}
+    <div class="switcher patient-pick">
+      {% for member in members %}
+      <label class="who">
+        <input type="radio" name="patient_id" value="{{ member.id }}"
+          {% if member.is_active %}checked{% endif %}>
+        <span class="mono-badge">{{ member.initials }}</span>
+        <span>{{ member.first_name }}</span>
+      </label>
+      {% endfor %}
+    </div>
   </div>
 
-  <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+  <button type="submit" class="btn btn-primary btn-lg" id="save-btn">Сохранить</button>
+  <a class="btn btn-quiet" href="/">Отмена</a>
 </form>
 {% endblock %}

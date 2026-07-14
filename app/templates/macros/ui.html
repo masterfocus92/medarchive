@@ -20,11 +20,19 @@
 </nav>
 {% endmacro %}
 
-{% macro empty(title, text) %}
+{% macro empty(title, text, action_href=None, action_label=None) %}
 <div class="empty">
   <h3>{{ title }}</h3>
   <p>{{ text }}</p>
+  {% if action_href %}
+  <a class="btn btn-primary btn-lg" href="{{ action_href }}">{{ action_label }}</a>
+  {% endif %}
 </div>
+{% endmacro %}
+
+{# Тост-подтверждение (кит): имя действия сквозное — «Сохранить» → «сохранена». #}
+{% macro toast(text) %}
+<div class="toast"><span class="dot"></span>{{ text }}</div>
 {% endmacro %}
 
 {# Поле ввода = label + control + опциональный helper (примитив кита §4).

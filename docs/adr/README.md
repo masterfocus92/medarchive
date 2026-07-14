@@ -15,3 +15,4 @@
 | [ADR-008](ADR-008-self-hosted-fonts.md) | Шрифты self-hosted (woff2 в статике), не с CDN | принято |
 | [ADR-009](ADR-009-seed-data-outside-git.md) | Данные seed вне git: код версионируется, данные — нет | принято |
 | [ADR-010](ADR-010-session-auth-default-deny.md) | Cookie-сессия (подписанная, 180 дней) и default-deny защита роутов | принято |
+| [ADR-011](ADR-011-vanilla-js-progressive.md) | JS: vanilla, прогрессивное улучшение, без сборки | принято |

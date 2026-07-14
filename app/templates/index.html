@@ -1,21 +1,24 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import empty %}
+{% from "macros/ui.html" import empty, toast %}
 
 {% block content %}
 {% if flash %}
-<div class="toast"><span class="dot"></span>{{ flash }}</div>
+{{ toast(flash) }}
 {% endif %}
 
 {% if records_count %}
 {# Временная замена ленты (Э5): счётчик, чтобы пустое состояние не врало.
    Число — моноширинное (правило кита: данные — mono). #}
 <p>{{ active_member.first_name }} — записей: <span class="rec-count">{{ records_count }}</span></p>
+<p><a class="btn btn-primary btn-lg" href="/records/new">Добавить запись</a></p>
 {% else %}
 {# Имя — в именительном падеже через тире: русские имена в косвенных
    падежах («У Анны») без морфологии корректно не просклонять. #}
 {{ empty(
   active_member.first_name ~ " — записей пока нет",
-  "Сфотографируйте документ или добавьте заметку — карта начнёт наполняться."
+  "Сфотографируйте документ или добавьте заметку — карта начнёт наполняться.",
+  action_href="/records/new",
+  action_label="Добавить запись"
 ) }}
 {% endif %}
 {% endblock %}
