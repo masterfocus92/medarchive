@@ -38,7 +38,8 @@ def engine(admin_conn):
         family = Family()
         member = FamilyMember(
             family=family,
-            full_name="Тестов Оператор",
+            last_name="Тестов",
+            first_name="Оператор",
             birth_date=date(1990, 1, 1),
             sex="male",
         )

@@ -46,10 +46,23 @@ class FamilyMember(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     family_id: Mapped[int] = mapped_column(ForeignKey("families.id"), index=True)
-    full_name: Mapped[str]
+    # ФИО нормализовано (T2.7): код не гадает о формате строки.
+    # Отчество опционально — есть не у всех, NULL честнее пустой строки.
+    last_name: Mapped[str]
+    first_name: Mapped[str]
+    middle_name: Mapped[str | None]
     # Возраст на момент записи важен для младенца и будущего reasoning.
     birth_date: Mapped[date]
     sex: Mapped[str]
+
+    @property
+    def full_name(self) -> str:
+        """Отображаемое ФИО «Фамилия Имя Отчество», без NULL-хвостов.
+
+        Только для вывода: хранение и поиск — по отдельным полям.
+        """
+        parts = (self.last_name, self.first_name, self.middle_name)
+        return " ".join(part for part in parts if part)
 
     family: Mapped[Family] = relationship(back_populates="members")
     # Учётка — строго 0..1: uselist=False поверх unique FK со стороны accounts.

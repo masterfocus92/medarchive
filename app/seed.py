@@ -32,19 +32,25 @@ def run_seed(settings: SeedSettings, session: Session) -> bool:
 
     adult1 = FamilyMember(
         family=family,
-        full_name=settings.adult1_full_name,
+        last_name=settings.adult1_last_name,
+        first_name=settings.adult1_first_name,
+        middle_name=settings.adult1_middle_name,
         birth_date=settings.adult1_birth_date,
         sex=settings.adult1_sex,
     )
     adult2 = FamilyMember(
         family=family,
-        full_name=settings.adult2_full_name,
+        last_name=settings.adult2_last_name,
+        first_name=settings.adult2_first_name,
+        middle_name=settings.adult2_middle_name,
         birth_date=settings.adult2_birth_date,
         sex=settings.adult2_sex,
     )
     child = FamilyMember(
         family=family,
-        full_name=settings.child_full_name,
+        last_name=settings.child_last_name,
+        first_name=settings.child_first_name,
+        middle_name=settings.child_middle_name,
         birth_date=settings.child_birth_date,
         sex=settings.child_sex,
     )

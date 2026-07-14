@@ -73,7 +73,9 @@ def session(engine):
 
 def _make_member(family: Family, **overrides) -> FamilyMember:
     defaults = {
-        "full_name": "Иванова Анна Дмитриевна",
+        "last_name": "Иванова",
+        "first_name": "Анна",
+        "middle_name": "Дмитриевна",
         "birth_date": date(2024, 1, 10),
         "sex": "female",
     }
@@ -90,6 +92,26 @@ def test_family_name_has_default(session):
     assert family.name == "Семья"
 
 
+def test_member_without_middle_name_is_valid(session):
+    # Отчество опционально (T2.7): есть не у всех, NULL честнее пустой строки.
+    family = Family()
+    member = _make_member(family, middle_name=None)
+    session.add(member)
+    session.flush()
+
+    assert member.id is not None
+    assert member.full_name == "Иванова Анна"  # без NULL-хвоста
+
+
+def test_full_name_property_joins_three_parts(session):
+    family = Family()
+    member = _make_member(family)
+    session.add(member)
+    session.flush()
+
+    assert member.full_name == "Иванова Анна Дмитриевна"
+
+
 def test_member_without_account_is_valid(session):
     # Явное требование владельца: у ребёнка учётки может НЕ быть.
     # Ничто в схеме не должно требовать учётку у члена семьи.
@@ -104,8 +126,8 @@ def test_member_without_account_is_valid(session):
 
 def test_account_email_unique(session):
     family = Family()
-    first = _make_member(family, full_name="Иванов Дмитрий")
-    second = _make_member(family, full_name="Иванова Мария")
+    first = _make_member(family, first_name="Дмитрий")
+    second = _make_member(family, first_name="Мария")
     session.add_all(
         [
             Account(member=first, email="ivanov@example.com", password_hash="x"),
@@ -134,7 +156,7 @@ def test_one_account_per_member(session):
 def _make_record(session) -> HealthRecord:
     family = Family()
     patient = _make_member(family)
-    author_member = _make_member(family, full_name="Иванов Дмитрий", sex="male")
+    author_member = _make_member(family, first_name="Дмитрий", sex="male")
     author = Account(member=author_member, email="author@example.com", password_hash="x")
     record = HealthRecord(author=author, patient=patient, comment="первый приём")
     session.add(record)

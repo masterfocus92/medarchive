@@ -9,7 +9,7 @@ from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -61,18 +61,30 @@ class SeedSettings(BaseSettings):
         env_file=".env.seed", env_file_encoding="utf-8", env_prefix="SEED_", extra="ignore"
     )
 
-    adult1_full_name: str
+    adult1_last_name: str = Field(min_length=1)
+    adult1_first_name: str = Field(min_length=1)
+    adult1_middle_name: str | None = None
     adult1_birth_date: date
     adult1_sex: str
     adult1_email: str
     adult1_password: str = Field(min_length=8)
 
-    adult2_full_name: str
+    adult2_last_name: str = Field(min_length=1)
+    adult2_first_name: str = Field(min_length=1)
+    adult2_middle_name: str | None = None
     adult2_birth_date: date
     adult2_sex: str
     adult2_email: str
     adult2_password: str = Field(min_length=8)
 
-    child_full_name: str
+    child_last_name: str = Field(min_length=1)
+    child_first_name: str = Field(min_length=1)
+    child_middle_name: str | None = None
     child_birth_date: date
     child_sex: str
+
+    @field_validator("adult1_middle_name", "adult2_middle_name", "child_middle_name", mode="before")
+    @classmethod
+    def _empty_middle_name_is_none(cls, value):
+        # Пустая строка в .env.seed (поле оставлено незаполненным) = нет отчества.
+        return value or None

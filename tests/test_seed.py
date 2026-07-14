@@ -25,17 +25,23 @@ SEED_TEST_DB = "medcard_test_seed"
 
 def _test_settings(**overrides) -> SeedSettings:
     data = {
-        "adult1_full_name": "Тестов Родитель Первый",
+        "adult1_last_name": "Тестов",
+        "adult1_first_name": "Родитель",
+        "adult1_middle_name": "Первый",
         "adult1_birth_date": date(1990, 1, 1),
         "adult1_sex": "male",
         "adult1_email": "parent1@test.local",
         "adult1_password": "secret-password-1",
-        "adult2_full_name": "Тестова Родитель Вторая",
+        "adult2_last_name": "Тестова",
+        "adult2_first_name": "Родитель",
+        "adult2_middle_name": None,  # отчество опционально (T2.7)
         "adult2_birth_date": date(1992, 2, 2),
         "adult2_sex": "female",
         "adult2_email": "parent2@test.local",
         "adult2_password": "secret-password-2",
-        "child_full_name": "Тестова Дочь Первая",
+        "child_last_name": "Тестова",
+        "child_first_name": "Дочь",
+        "child_middle_name": "Первая",
         "child_birth_date": date(2024, 3, 3),
         "child_sex": "female",
     }
@@ -76,6 +82,8 @@ def test_seed_creates_structure_and_is_idempotent(engine):
         members = session.scalars(select(FamilyMember)).all()
         without_account = [m for m in members if m.id not in with_account]
         assert len(without_account) == 1
+        assert without_account[0].first_name == "Дочь"
+        # full_name собирается свойством из трёх полей.
         assert without_account[0].full_name == "Тестова Дочь Первая"
 
         # Пароль хранится только bcrypt-хэшем.
@@ -100,6 +108,14 @@ def test_seed_settings_require_data(monkeypatch):
 
     with pytest.raises(ValidationError):
         SeedSettings(_env_file=None)
+
+
+def test_seed_rejects_blank_name():
+    # Фамилия и имя обязательны — пустой плейсхолдер шаблона режется валидацией.
+    with pytest.raises(ValidationError) as exc_info:
+        _test_settings(adult1_last_name="")
+
+    assert "adult1_last_name" in str(exc_info.value)
 
 
 def test_seed_rejects_blank_password():
