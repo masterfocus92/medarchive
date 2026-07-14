@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from alembic import command
 from app.config import SeedSettings
 from app.models import Account, Family, FamilyMember
-from app.seed import run_seed
+from app.seed import detect_placeholders, format_validation_error, run_seed, seed_drift
 
 SEED_TEST_DB = "medcard_test_seed"
 
@@ -108,6 +108,105 @@ def test_seed_settings_require_data(monkeypatch):
 
     with pytest.raises(ValidationError):
         SeedSettings(_env_file=None)
+
+
+# ---------- T2.6: точная причина ошибки валидации ----------
+
+
+def _validation_error(**overrides) -> ValidationError:
+    with pytest.raises(ValidationError) as exc_info:
+        _test_settings(**overrides)
+    return exc_info.value
+
+
+def test_error_message_blank_password_says_not_filled():
+    message = format_validation_error(_validation_error(adult1_password=""))
+
+    assert "adult1_password — не заполнено" in message
+
+
+def test_error_message_short_password_says_too_short():
+    message = format_validation_error(_validation_error(adult1_password="short"))
+
+    assert "adult1_password — короче 8 символов" in message
+    assert "не заполнено" not in message
+
+
+def test_error_message_mixed_reports_each_reason():
+    message = format_validation_error(
+        _validation_error(adult1_password="", adult2_password="short")
+    )
+
+    assert "adult1_password — не заполнено" in message
+    assert "adult2_password — короче 8 символов" in message
+
+
+def test_error_message_missing_field_says_not_filled(monkeypatch):
+    for key in list(os.environ):
+        if key.startswith("SEED_"):
+            monkeypatch.delenv(key)
+    with pytest.raises(ValidationError) as exc_info:
+        SeedSettings(_env_file=None)
+
+    message = format_validation_error(exc_info.value)
+    assert "adult1_last_name — не заполнено" in message
+
+
+# ---------- T2.6: детект плейсхолдеров шаблона ----------
+
+
+def test_placeholders_are_detected():
+    settings = _test_settings(adult1_last_name="Фамилия", adult2_email="parent2@example.com")
+
+    fields = detect_placeholders(settings)
+
+    assert "adult1_last_name" in fields
+    assert "adult2_email" in fields
+
+
+def test_real_data_has_no_placeholders():
+    assert detect_placeholders(_test_settings()) == []
+
+
+# ---------- T2.6: сверка БД с файлом при «данные уже есть» ----------
+
+
+@pytest.fixture(scope="module")
+def drift_engine(admin_conn):
+    """Отдельная БД, засеянная эталонными настройками."""
+    recreate_db(admin_conn, "medcard_test_drift")
+    command.upgrade(alembic_config(db_url("medcard_test_drift")), "head")
+    engine = create_engine(db_url("medcard_test_drift"))
+    with Session(engine) as session:
+        run_seed(_test_settings(), session)
+    yield engine
+    engine.dispose()
+    drop_db(admin_conn, "medcard_test_drift")
+
+
+def test_no_drift_when_db_matches_file(drift_engine):
+    with Session(drift_engine) as session:
+        assert seed_drift(_test_settings(), session) == []
+
+
+def test_drift_names_member_and_fields_but_not_values(drift_engine):
+    changed = _test_settings(
+        child_middle_name="Другая",
+        adult1_birth_date=date(1991, 12, 31),
+        adult2_email="new-address@test.local",
+    )
+
+    with Session(drift_engine) as session:
+        drift = seed_drift(changed, session)
+
+    text = "; ".join(drift)
+    assert "ребёнок" in text and "отчество" in text
+    assert "взрослый 1" in text and "дата рождения" in text
+    assert "взрослый 2" in text and "email" in text
+    # Значения приватны: в выводе их нет (терминал попадает в скриншоты/логи).
+    assert "Другая" not in text
+    assert "1991" not in text
+    assert "new-address@test.local" not in text
 
 
 def test_seed_rejects_blank_name():
