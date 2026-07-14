@@ -168,6 +168,14 @@ def test_real_data_has_no_placeholders():
     assert detect_placeholders(_test_settings()) == []
 
 
+def test_seed_emails_are_normalized_to_lowercase():
+    # Email нормализуется на входе в настройки: в БД всегда lowercase,
+    # вход сравнивает так же — регистр не может сломать логин.
+    settings = _test_settings(adult1_email="Parent1@TEST.local")
+
+    assert settings.adult1_email == "parent1@test.local"
+
+
 # ---------- T2.6: сверка БД с файлом при «данные уже есть» ----------
 
 

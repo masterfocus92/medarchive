@@ -125,6 +125,15 @@ def test_login_success_opens_app(client):
     assert "записей пока нет" in index.text
 
 
+def test_login_email_is_case_insensitive(client):
+    # Телефонная клавиатура любит заглавные; для почты регистр не значим.
+    # «OPERATOR@Test.Local» обязан войти так же, как «operator@test.local».
+    response = _login(client, email=EMAIL.upper())
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/"
+
+
 def test_wrong_password_rejected(client):
     response = _login(client, password="wrong-password-1")
 

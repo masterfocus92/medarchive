@@ -15,7 +15,9 @@ def authenticate(session: Session, email: str, password: str) -> Account | None:
     выполняется bcrypt-проверка против DUMMY_HASH). Иначе форма входа
     превращается в оракул существующих email.
     """
-    account = get_by_email(session, email.strip())
+    # lowercase симметрично seed'у (SeedSettings нормализует при загрузке):
+    # для почты регистр не значим, а телефонная клавиатура любит заглавные.
+    account = get_by_email(session, email.strip().lower())
     if account is None:
         verify_password(password, DUMMY_HASH)
         return None

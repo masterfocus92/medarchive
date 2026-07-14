@@ -88,3 +88,10 @@ class SeedSettings(BaseSettings):
     def _empty_middle_name_is_none(cls, value):
         # Пустая строка в .env.seed (поле оставлено незаполненным) = нет отчества.
         return value or None
+
+    @field_validator("adult1_email", "adult2_email")
+    @classmethod
+    def _email_lowercase(cls, value: str) -> str:
+        # В БД email всегда lowercase; вход нормализует так же
+        # (services/auth) — регистр не может сломать логин.
+        return value.strip().lower()
