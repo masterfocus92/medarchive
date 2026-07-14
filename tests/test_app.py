@@ -12,7 +12,20 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import Settings
 from app.main import create_app
+
+
+def _test_settings() -> Settings:
+    # Явные настройки: тесты каркаса не зависят от .env машины (ADR-005).
+    # БД этим роутам не нужна — URL фиктивный.
+    return Settings(
+        _env_file=None,
+        database_url="postgresql+psycopg://unused:unused@localhost:5432/unused",
+        files_dir="./files",
+        secret_key="test-secret-key-only-for-tests-0123456789",
+    )
+
 
 TEMPLATES_DIR = Path("app/templates")
 CSS_DIR = Path("app/static/css")
@@ -25,7 +38,7 @@ HEX_COLOR = re.compile(r"#[0-9a-fA-F]{3,8}\b")
 def client() -> TestClient:
     # Каждому тесту — свежее приложение: проверяем заодно,
     # что фабрика не хранит глобального состояния между сборками.
-    return TestClient(create_app())
+    return TestClient(create_app(_test_settings()))
 
 
 def test_health_returns_ok(client):
@@ -35,23 +48,8 @@ def test_health_returns_ok(client):
     assert response.json() == {"status": "ok"}
 
 
-def test_index_renders_html(client):
-    response = client.get("/")
-
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith("text/html")
-    # Страница не пустая — шаблон реально отрендерился, а не отдал заглушку.
-    assert response.text.strip()
-
-
-def test_index_shows_empty_state(client):
-    # Пустое состояние — приглашение, не заглушка (DESIGN.MD §5):
-    # примитив empty из кита, заголовок + одна фраза.
-    response = client.get("/")
-
-    assert response.status_code == 200
-    assert 'class="empty"' in response.text
-    assert "Записей пока нет" in response.text
+# Тесты рендера «/» переехали в test_auth.py: главная защищена (T2.2),
+# смотреть её без входа больше нельзя — и это проверяется там же.
 
 
 def test_css_is_served(client):

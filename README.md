@@ -13,8 +13,9 @@
 ## Запуск приложения
 
 ```
-uv run uvicorn app.main:app --reload
+uv run uvicorn app.main:create_app --factory --reload
 ```
 
 Приложение — http://localhost:8000, liveness — http://localhost:8000/health.
 Запускать из корня проекта (импорт пакета `app` — из рабочей копии).
+Нужен `SECRET_KEY` в `.env` (см. `.env.example`).

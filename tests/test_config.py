@@ -18,10 +18,15 @@ def _clean_env(monkeypatch):
     # тест должен вести себя одинаково на любой машине.
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.delenv("FILES_DIR", raising=False)
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+
+
+TEST_SECRET = "test-secret-key-only-for-tests-0123456789"
 
 
 def test_missing_database_url_fails_loudly(monkeypatch):
     monkeypatch.setenv("FILES_DIR", "./files")
+    monkeypatch.setenv("SECRET_KEY", TEST_SECRET)
 
     with pytest.raises(ValidationError) as exc_info:
         Settings(_env_file=None)
@@ -33,11 +38,24 @@ def test_missing_database_url_fails_loudly(monkeypatch):
 
 def test_missing_files_dir_fails_loudly(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/db")
+    monkeypatch.setenv("SECRET_KEY", TEST_SECRET)
 
     with pytest.raises(ValidationError) as exc_info:
         Settings(_env_file=None)
 
     assert "files_dir" in str(exc_info.value).lower()
+
+
+def test_short_secret_key_rejected(monkeypatch):
+    # Игрушечный секрет = подделываемая сессия — не стартуем (T2.2).
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/db")
+    monkeypatch.setenv("FILES_DIR", "./files")
+    monkeypatch.setenv("SECRET_KEY", "short")
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(_env_file=None)
+
+    assert "secret_key" in str(exc_info.value).lower()
 
 
 def test_ignores_extra_env_keys(tmp_path, monkeypatch):
@@ -47,6 +65,7 @@ def test_ignores_extra_env_keys(tmp_path, monkeypatch):
     env_file.write_text(
         "DATABASE_URL=postgresql+psycopg://u:p@localhost:5432/db\n"
         "FILES_DIR=./files\n"
+        f"SECRET_KEY={TEST_SECRET}\n"
         "POSTGRES_USER=medcard\n"
         "POSTGRES_PASSWORD=medcard\n"
         "POSTGRES_DB=medcard\n",
@@ -61,6 +80,7 @@ def test_ignores_extra_env_keys(tmp_path, monkeypatch):
 def test_reads_values_from_environment(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/db")
     monkeypatch.setenv("FILES_DIR", "./files")
+    monkeypatch.setenv("SECRET_KEY", TEST_SECRET)
 
     settings = Settings(_env_file=None)
 

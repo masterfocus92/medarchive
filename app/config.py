@@ -28,6 +28,9 @@ class Settings(BaseSettings):
 
     database_url: str
     files_dir: Path
+    # Подпись session-cookie (T2.2). Не короче 32 символов: пустой или
+    # игрушечный секрет = подделываемая сессия, лучше не стартовать вовсе.
+    secret_key: str = Field(min_length=32)
 
 
 @lru_cache
