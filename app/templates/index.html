@@ -9,8 +9,8 @@
 {% if records_count %}
 {# Временная замена ленты (Э5): счётчик, чтобы пустое состояние не врало.
    Число — моноширинное (правило кита: данные — mono). #}
-<p>{{ active_member.first_name }} — записей: <span class="rec-count">{{ records_count }}</span></p>
-<p><a class="btn btn-primary btn-lg" href="/records/new">Добавить запись</a></p>
+<p class="records-summary">{{ active_member.first_name }} — записей: <span class="rec-count">{{ records_count }}</span></p>
+<a class="btn btn-primary btn-lg" href="/records/new">Добавить запись</a>
 {% else %}
 {# Имя — в именительном падеже через тире: русские имена в косвенных
    падежах («У Анны») без морфологии корректно не просклонять. #}

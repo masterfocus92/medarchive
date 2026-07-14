@@ -121,6 +121,9 @@
     padding: 10px var(--s4); border-radius: var(--radius-sm);
     border: 1px solid transparent; cursor: pointer;
     line-height: 1; transition: background .12s ease, border-color .12s ease;
+    /* Кнопкой бывает и ссылка (<a class="btn">): inline-элементу паддинги
+       не раздвигают строки — без inline-block box наезжает на соседей. */
+    display: inline-block; text-decoration: none; text-align: center;
   }
   .btn:focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
   .btn-primary { background: var(--ink-strong); color: var(--sheet); }
@@ -180,10 +183,12 @@
   .switcher { display: flex; gap: var(--s2); align-items: center; }
   /* .who — настоящая <button> (переключение — обычная форма, без JS):
      сброс дефолтного вида кнопки входит в примитив. */
-  .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); background: none; border: none; font-family: inherit; }
+  /* Ширина фиксированная: иначе колонки разной ширины (длина имени)
+     дают неравные визуальные интервалы между монограммами. */
+  .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); background: none; border: none; font-family: inherit; width: 76px; }
   /* :not(.mono-badge): монограмма внутри кнопки — тоже span, но живёт
      своим кеглем; правило подписи не должно её ужимать. */
-  .switcher .who span:not(.mono-badge) { font-size: var(--t-caption); color: var(--pencil); }
+  .switcher .who span:not(.mono-badge) { font-size: var(--t-caption); color: var(--pencil); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .switcher .who[aria-selected="true"] .mono-badge { border-color: var(--ink); border-width: 2px; }
   .switcher .who[aria-selected="true"] span:not(.mono-badge) { color: var(--ink); font-weight: 500; }
 
