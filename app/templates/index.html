@@ -6,6 +6,21 @@
 {{ toast(flash) }}
 {% endif %}
 
+{% if awaiting_review %}
+{# Временный вход на экран проверки — ленту даст Э5. #}
+<div class="card awaiting">
+  <h3>Ждут проверки</h3>
+  <ul>
+    {% for record in awaiting_review %}
+    <li>
+      <a href="/records/{{ record.id }}">{{ record.title or "Запись без названия" }}</a>
+      — <span class="rec-date">{{ record.created_at.strftime("%d.%m.%Y") }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% if records_count %}
 {# Временная замена ленты (Э5): счётчик, чтобы пустое состояние не врало.
    Число — моноширинное (правило кита: данные — mono). #}

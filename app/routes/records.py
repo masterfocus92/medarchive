@@ -1,6 +1,7 @@
-"""Создание записи и раздача её файлов (flows/record-creation.md)."""
+"""Создание записи, экран проверки и раздача файлов (flows/record-creation.md)."""
 
 import logging
+from datetime import date
 from typing import Annotated
 
 from fastapi import (
@@ -14,15 +15,22 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Account, ParseStatus, RecordFile
+from app.models import (
+    CONFIRMED_LABEL,
+    PARSE_STATUS_LABELS,
+    Account,
+    ParseStatus,
+    RecordFile,
+)
 from app.repositories.members import list_by_family
+from app.repositories.records import get_for_family
 from app.routes.deps import get_app_settings, get_current_account
 from app.routes.pages import templates
-from app.services.pipeline import run_extraction
+from app.services.pipeline import can_retry, run_extraction
 from app.services.profiles import switcher_context
 from app.services.records import (
     EmptyRecordError,
@@ -116,6 +124,129 @@ def create_record_route(
     request.session["flash"] = TOAST_SAVED
     # Решение ❓2 потока: после сохранения — главная (карточка — Э5).
     return RedirectResponse("/", status_code=303)
+
+
+CONFIRM_TOAST = "Запись сохранена"
+INVALID_DATE_ERROR = "Такой даты нет. Проверьте день и месяц."
+
+
+def _record_context(request: Request, account: Account, db: Session, record) -> dict:
+    members = list_by_family(db, account.member.family_id)
+    if record.confirmed_at is not None:
+        status_label = CONFIRMED_LABEL
+    else:
+        status_label = PARSE_STATUS_LABELS.get(ParseStatus(record.parse_status))
+    suggested = None
+    if record.suggested_patient_id is not None and record.suggested_patient_id != record.patient_id:
+        suggested = next((m for m in members if m.id == record.suggested_patient_id), None)
+    context = switcher_context(request.session, account, members)
+    context.update(
+        {
+            "record": record,
+            "status_label": status_label,
+            "record_files": [
+                {"position": f.position, "url": f"/records/{record.id}/files/{f.position}"}
+                for f in record.files
+            ],
+            "suggested_patient": suggested,
+            "can_retry": can_retry(record),
+            # ❓4: страница сама переспрашивает сервер, пока конвейер активен.
+            "auto_refresh": record.parse_status
+            in (ParseStatus.UPLOADED.value, ParseStatus.PARSING.value),
+            "error": None,
+        }
+    )
+    return context
+
+
+@router.get("/records/{record_id}", response_class=HTMLResponse)
+def record_screen(
+    record_id: int,
+    request: Request,
+    account: Annotated[Account, Depends(get_current_account)],
+    db: Annotated[Session, Depends(get_session)],
+) -> HTMLResponse:
+    record = get_for_family(db, record_id, account.member.family_id)
+    if record is None:
+        raise HTTPException(status_code=404)
+    return templates.TemplateResponse(
+        request, "records/record.html", _record_context(request, account, db, record)
+    )
+
+
+@router.post("/records/{record_id}/confirm")
+def confirm_record(
+    record_id: int,
+    request: Request,
+    account: Annotated[Account, Depends(get_current_account)],
+    db: Annotated[Session, Depends(get_session)],
+    patient_id: Annotated[int, Form()],
+    title: Annotated[str, Form()] = "",
+    event_date: Annotated[str, Form()] = "",
+    clinic: Annotated[str, Form()] = "",
+    doctor: Annotated[str, Form()] = "",
+    record_type: Annotated[str, Form()] = "",
+    content: Annotated[str, Form()] = "",
+    comment: Annotated[str, Form()] = "",
+):
+    record = get_for_family(db, record_id, account.member.family_id)
+    if record is None:
+        raise HTTPException(status_code=404)
+
+    family_ids = {m.id for m in list_by_family(db, account.member.family_id)}
+    if patient_id not in family_ids:
+        raise HTTPException(status_code=404)
+
+    parsed_date = None
+    if event_date.strip():
+        try:
+            parsed_date = date.fromisoformat(event_date.strip())
+        except ValueError:
+            context = _record_context(request, account, db, record)
+            context["error"] = INVALID_DATE_ERROR
+            return templates.TemplateResponse(request, "records/record.html", context)
+
+    # Пустые строки формы — «нет данных», не данные.
+    record.title = title.strip() or None
+    record.event_date = parsed_date
+    record.clinic = clinic.strip() or None
+    record.doctor = doctor.strip() or None
+    record.record_type = record_type.strip() or None
+    record.content = content.strip() or None
+    record.comment = comment.strip() or None
+    record.patient_id = patient_id
+    # ADR-012: момент подтверждения одноразовый — повторные правки поля
+    # обновляют, но историю «когда человек впервые проверил» не переписывают.
+    if record.confirmed_at is None:
+        record.confirmed_at = func.now()
+    db.commit()
+
+    request.session["flash"] = CONFIRM_TOAST
+    return RedirectResponse("/", status_code=303)
+
+
+@router.post("/records/{record_id}/reparse")
+def reparse_record(
+    record_id: int,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    account: Annotated[Account, Depends(get_current_account)],
+    db: Annotated[Session, Depends(get_session)],
+):
+    record = get_for_family(db, record_id, account.member.family_id)
+    if record is None:
+        raise HTTPException(status_code=404)
+
+    # ❓6: ретрай из parse_failed и из зависшего конвейера; иначе — no-op
+    # (страница просто перезагрузится с актуальным статусом).
+    if can_retry(record):
+        background_tasks.add_task(
+            run_extraction,
+            record.id,
+            settings=get_app_settings(request),
+            session_factory=request.app.state.session_factory,
+        )
+    return RedirectResponse(f"/records/{record_id}", status_code=303)
 
 
 @router.get("/records/{record_id}/files/{position}")

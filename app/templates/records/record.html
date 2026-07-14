@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Запись — Семейная медкарта{% endblock %}
+
+{% block head %}
+{% if auto_refresh %}
+{# ❓4 потока: конвейер активен — страница сама переспрашивает сервер. #}
+<meta http-equiv="refresh" content="5">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{# Экран проверки (T4.4; вёрстка — T4.5). Он же — режим правки (Э6). #}
+<h1>Запись</h1>
+
+<p>Статус: <strong>{{ status_label }}</strong>
+{% if can_retry %}
+</p>
+<form method="post" action="/records/{{ record.id }}/reparse">
+  <button type="submit" class="btn btn-secondary">Разобрать ещё раз</button>
+</form>
+<p>
+{% endif %}
+</p>
+
+{% if record_files %}
+<p>Страницы:
+{% for f in record_files %}
+  <a href="{{ f.url }}">стр. {{ f.position }}</a>
+{% endfor %}
+</p>
+{% endif %}
+
+<form method="post" action="/records/{{ record.id }}/confirm">
+  {% if error %}
+  <div class="field error">
+    <p class="helper" role="alert">{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <div class="field">
+    <label for="f-title">Название</label>
+    <input class="control" id="f-title" name="title" type="text"
+      value="{{ record.title or '' }}">
+  </div>
+
+  <div class="field">
+    <label for="f-event-date">Дата события</label>
+    <input class="control data" id="f-event-date" name="event_date" type="date"
+      value="{{ record.event_date.isoformat() if record.event_date else '' }}">
+    <div class="helper">Когда документ датирован, а не когда внесён.</div>
+  </div>
+
+  <div class="field">
+    <label for="f-clinic">Клиника</label>
+    <input class="control" id="f-clinic" name="clinic" type="text"
+      value="{{ record.clinic or '' }}">
+  </div>
+
+  <div class="field">
+    <label for="f-doctor">Врач</label>
+    <input class="control" id="f-doctor" name="doctor" type="text"
+      value="{{ record.doctor or '' }}">
+  </div>
+
+  <div class="field">
+    <label for="f-type">Тип</label>
+    <input class="control" id="f-type" name="record_type" type="text"
+      value="{{ record.record_type or '' }}" list="record-types">
+    <datalist id="record-types">
+      <option value="анализ"></option>
+      <option value="приём"></option>
+      <option value="прививка"></option>
+      <option value="выписка"></option>
+      <option value="узи"></option>
+    </datalist>
+  </div>
+
+  <div class="field">
+    <label for="f-content">Содержание</label>
+    <textarea class="control" id="f-content" name="content">{{ record.content or '' }}</textarea>
+  </div>
+
+  <div class="field">
+    <label for="f-comment">Заметка <span class="opt">— необязательно</span></label>
+    <textarea class="control pencil" id="f-comment" name="comment">{{ record.comment or '' }}</textarea>
+  </div>
+
+  <div class="field">
+    <label>Чья запись</label>
+    {% if suggested_patient %}
+    <div class="helper">AI считает, что это запись: {{ suggested_patient.first_name }} —
+      выберите монограмму, чтобы принять.</div>
+    {% endif %}
+    <div class="switcher patient-pick">
+      {% for member in members %}
+      <label class="who">
+        <input type="radio" name="patient_id" value="{{ member.id }}"
+          {% if member.id == record.patient_id %}checked{% endif %}>
+        <span class="mono-badge">{{ member.initials }}</span>
+        <span>{{ member.first_name }}</span>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+  <a class="btn btn-quiet" href="/">Отмена</a>
+</form>
+{% endblock %}

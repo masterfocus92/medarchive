@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.db import get_session
 from app.models import Account
 from app.repositories.members import list_by_family
-from app.repositories.records import count_by_patient
+from app.repositories.records import count_by_patient, list_awaiting_review
 from app.routes.deps import get_current_account
 from app.services.profiles import switcher_context
 
@@ -31,6 +31,8 @@ def index(
     members = list_by_family(db, account.member.family_id)
     context = switcher_context(request.session, account, members)
     context["records_count"] = count_by_patient(db, context["active_member"].id)
+    # Блок «Ждут проверки» — вход на экран проверки до появления ленты (Э5).
+    context["awaiting_review"] = list_awaiting_review(db, account.member.family_id)
     # Flash-тост: положил-показал-стёр (контракт T3.2).
     context["flash"] = request.session.pop("flash", None)
     return templates.TemplateResponse(request, "index.html", context)
