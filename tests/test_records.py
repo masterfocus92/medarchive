@@ -243,6 +243,7 @@ def test_photo_with_note_creates_uploaded_record(client, db_setup, files_dir, co
     with Session(engine) as session:
         record = session.scalars(select(HealthRecord).order_by(HealthRecord.id.desc())).first()
         assert record.parse_status == "uploaded"
+        assert record.confirmed_at is None  # подтвердит человек после разбора (Э4)
         assert record.comment == "первый приём"
         assert record.patient_id == ids["child"]
         assert record.created_at is not None
@@ -280,8 +281,10 @@ def test_note_only_record_is_confirmed(client, db_setup):
     assert response.status_code == 303
     with Session(engine) as session:
         record = session.scalars(select(HealthRecord).order_by(HealthRecord.id.desc())).first()
-        # Решение ❓1 потока: разбирать нечего — сразу подтверждена.
-        assert record.parse_status == "confirmed"
+        # Решение ❓1 потока + T3.5: конвейера нет (none), подтверждена
+        # в момент создания — автор и есть проверяющий.
+        assert record.parse_status == "none"
+        assert record.confirmed_at is not None
         assert record.files == []
 
 

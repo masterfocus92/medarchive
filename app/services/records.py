@@ -9,6 +9,7 @@
 import shutil
 from pathlib import Path
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models import Account, HealthRecord, ParseStatus, RecordFile
@@ -97,12 +98,15 @@ def create_record(
 
     validated = _validate_files(files)
 
-    status = ParseStatus.UPLOADED if validated else ParseStatus.CONFIRMED
+    # Две оси (ADR-012): конвейер — только про файлы; запись без файлов
+    # подтверждена в момент создания — автор и есть проверяющий.
+    status = ParseStatus.UPLOADED if validated else ParseStatus.NONE
     record = HealthRecord(
         author_account_id=author.id,
         patient_id=patient_id,
         comment=comment or None,
         parse_status=status.value,
+        confirmed_at=None if validated else func.now(),
     )
     db.add(record)
     db.flush()  # нужен id — он входит в путь хранения

@@ -18,28 +18,32 @@ from app.models.family import Account, FamilyMember
 
 
 class ParseStatus(StrEnum):
-    """Статусы конвейера разбора (flows/record-creation.md §6).
+    """Статус конвейера разбора файлов — И ТОЛЬКО его (ADR-012).
 
-    Все пять заведены на этапе 3, чтобы этап 4 не требовал миграции.
-    В БД хранятся английские значения; русские тексты — PARSE_STATUS_LABELS.
+    Подтверждение человеком — отдельная ось: колонка confirmed_at.
+    Терминальные значения (parsed / parse_failed) не затираются никогда —
+    это данные о качестве экстрактора (риск №2 OVERVIEW).
+    Полная статусная модель — docs/code/README.md §«Статусная модель».
     """
 
-    UPLOADED = "uploaded"  # файл сохранён, запись существует
+    NONE = "none"  # файлов нет — конвейера не существует
+    UPLOADED = "uploaded"  # файлы сохранены, разбор не начат
     PARSING = "parsing"  # фон взял в работу (Э4)
     PARSED = "parsed"  # черновик полей готов (Э4)
     PARSE_FAILED = "parse_failed"  # AI упал; сохранение не отменяется
-    CONFIRMED = "confirmed"  # человек подтвердил (или запись без файла)
 
 
 # Единственное место русских названий статусов — статус всегда виден в UI
 # текстом (DESIGN.MD §5), формулировки не должны расползаться по шаблонам.
+# У NONE подписи нет: несуществующий конвейер в UI не показывается.
 PARSE_STATUS_LABELS = {
     ParseStatus.UPLOADED: "загружено",
     ParseStatus.PARSING: "разбирается",
     ParseStatus.PARSED: "разобрано",
     ParseStatus.PARSE_FAILED: "разбор не удался",
-    ParseStatus.CONFIRMED: "подтверждено",
 }
+
+CONFIRMED_LABEL = "подтверждено"
 
 
 class HealthRecord(Base):
@@ -50,7 +54,7 @@ class HealthRecord(Base):
         # Статус — системное поле с закрытым набором значений (в отличие
         # от открытого record_type): опечатка в статусе ломает конвейер.
         CheckConstraint(
-            "parse_status IN ('uploaded', 'parsing', 'parsed', 'parse_failed', 'confirmed')",
+            "parse_status IN ('none', 'uploaded', 'parsing', 'parsed', 'parse_failed')",
             name="parse_status_allowed",
         ),
     )
@@ -64,8 +68,12 @@ class HealthRecord(Base):
     # Инвариант «дата_создания = момент внесения»: проставляет БД,
     # приложение значение не передаёт — записи задним числом невозможны.
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    # Статус конвейера разбора; дефолт ставит БД (T3.1).
-    parse_status: Mapped[str] = mapped_column(server_default=ParseStatus.UPLOADED.value)
+    # Ось 1: конвейер разбора файлов. Дефолт 'none' — ничего не заявляет
+    # о несуществующем конвейере (T3.5/ADR-012).
+    parse_status: Mapped[str] = mapped_column(server_default=ParseStatus.NONE.value)
+    # Ось 2: подтверждение человеком. NULL = не подтверждена; для записи
+    # без файла ставится при создании (автор и есть проверяющий).
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     # Всё ниже — опционально: ничто не блокирует сохранение (главный
     # принцип продукта — минимум трения при вводе).

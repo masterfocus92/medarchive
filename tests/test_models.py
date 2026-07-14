@@ -163,14 +163,15 @@ def _make_record(session) -> HealthRecord:
     return record
 
 
-def test_record_parse_status_defaults_to_uploaded(session):
-    # Дефолт ставит БД (T3.1): код может не знать о статусах вовсе,
-    # запись всё равно рождается в правильном состоянии конвейера.
+def test_record_parse_status_defaults_to_none(session):
+    # Дефолт ставит БД (T3.5): 'none' — самое безопасное состояние,
+    # ничего не заявляющее о несуществующем конвейере.
     record = _make_record(session)
     session.flush()
     session.refresh(record)
 
-    assert record.parse_status == "uploaded"
+    assert record.parse_status == "none"
+    assert record.confirmed_at is None
 
 
 def test_record_parse_status_rejects_unknown_value(session):
@@ -184,6 +185,59 @@ def test_record_parse_status_rejects_unknown_value(session):
             text("UPDATE health_records SET parse_status = 'weird' WHERE id = :id"),
             {"id": record.id},
         )
+
+
+def test_record_parse_status_rejects_legacy_confirmed(session):
+    # 'confirmed' — легаси T3.1: подтверждение переехало в confirmed_at (T3.5).
+    from sqlalchemy import text
+
+    record = _make_record(session)
+    session.flush()
+
+    with pytest.raises(IntegrityError):
+        session.execute(
+            text("UPDATE health_records SET parse_status = 'confirmed' WHERE id = :id"),
+            {"id": record.id},
+        )
+
+
+def test_migration_c9d0_converts_confirmed_with_data(admin_conn):
+    """Миграция T3.5 на БД С ДАННЫМИ: старый 'confirmed' переезжает
+    в none+confirmed_at. Пустые БД такой класс ошибок (порядок операций
+    с CHECK) не ловят — поймано на живой dev-базе 14.07.2026."""
+    from sqlalchemy import text
+
+    recreate_db(admin_conn, "medcard_test_data_migration")
+    url = db_url("medcard_test_data_migration")
+    config = alembic_config(url)
+    engine = create_engine(url)
+    try:
+        command.upgrade(config, "b7c8d9e0f1a2")  # схема со старым 'confirmed'
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO families (name) VALUES ('Семья');"
+                    "INSERT INTO family_members (family_id, last_name, first_name, birth_date, sex)"
+                    " VALUES (1, 'Тестов', 'Оператор', '1990-01-01', 'male');"
+                    "INSERT INTO accounts (family_member_id, email, password_hash, is_admin)"
+                    " VALUES (1, 'op@test.local', 'x', true);"
+                    "INSERT INTO health_records"
+                    " (author_account_id, patient_id, comment, parse_status)"
+                    " VALUES (1, 1, 'заметка', 'confirmed');"
+                )
+            )
+
+        command.upgrade(config, "head")
+
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT parse_status, confirmed_at, created_at FROM health_records")
+            ).one()
+        assert row.parse_status == "none"
+        assert row.confirmed_at == row.created_at
+    finally:
+        engine.dispose()
+        drop_db(admin_conn, "medcard_test_data_migration")
 
 
 def test_record_created_at_set_by_database(session):
