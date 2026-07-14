@@ -87,13 +87,18 @@ class HealthRecord(Base):
     content: Mapped[str | None] = mapped_column(Text)  # текст из документа
     comment: Mapped[str | None] = mapped_column(Text)  # «карандаш» — пометка человека
 
+    # Предложение AI о пациенте — отдельно от выбора человека (ветка B7):
+    # patient_id не затирается молча, принятие — явный тап на экране проверки.
+    suggested_patient_id: Mapped[int | None] = mapped_column(ForeignKey("family_members.id"))
+
     # Soft delete: физически записи не стираются. Фильтрация удалённых —
     # обязанность репозитория по умолчанию (инвариант, этап 6).
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_by_account_id: Mapped[int | None] = mapped_column(ForeignKey("accounts.id"))
 
     author: Mapped[Account] = relationship(foreign_keys=[author_account_id])
-    patient: Mapped[FamilyMember] = relationship()
+    # foreign_keys обязателен: suggested_patient_id — второй FK на ту же таблицу.
+    patient: Mapped[FamilyMember] = relationship(foreign_keys=[patient_id])
     files: Mapped[list["RecordFile"]] = relationship(
         back_populates="record", order_by="RecordFile.position"
     )

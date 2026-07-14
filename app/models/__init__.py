@@ -5,13 +5,22 @@
 """
 
 from app.models.base import Base
+from app.models.extraction import ExtractionRun
 from app.models.family import Account, Family, FamilyMember
-from app.models.record import PARSE_STATUS_LABELS, HealthRecord, ParseStatus, RecordFile
+from app.models.record import (
+    CONFIRMED_LABEL,
+    PARSE_STATUS_LABELS,
+    HealthRecord,
+    ParseStatus,
+    RecordFile,
+)
 
 __all__ = [
+    "CONFIRMED_LABEL",
     "PARSE_STATUS_LABELS",
     "Account",
     "Base",
+    "ExtractionRun",
     "Family",
     "FamilyMember",
     "HealthRecord",

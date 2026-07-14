@@ -8,8 +8,9 @@
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -31,6 +32,35 @@ class Settings(BaseSettings):
     # Подпись session-cookie (T2.2). Не короче 32 символов: пустой или
     # игрушечный секрет = подделываемая сессия, лучше не стартовать вовсе.
     secret_key: str = Field(min_length=32)
+
+    # AI-экстрактор (ADR-013/014). Дефолт disabled: машина без ключа
+    # остаётся рабочей — конвейер честно кладёт parse_failed.
+    # 'claude' зарезервирован под родной адаптер (бэклог).
+    extractor_provider: Literal["openai_compatible", "claude", "disabled"] = "disabled"
+    extractor_base_url: str = ""
+    extractor_model: str = ""
+    extractor_api_key: str = ""
+
+    @model_validator(mode="after")
+    def _extractor_config_complete(self):
+        # Включённый провайдер с дырявым конфигом — ошибка старта,
+        # а не сюрприз при первом разборе (логика SECRET_KEY).
+        if self.extractor_provider != "disabled":
+            missing = [
+                name
+                for name, value in (
+                    ("extractor_base_url", self.extractor_base_url),
+                    ("extractor_model", self.extractor_model),
+                    ("extractor_api_key", self.extractor_api_key),
+                )
+                if not value
+            ]
+            if missing:
+                raise ValueError(
+                    f"extractor_provider={self.extractor_provider}, "
+                    f"но не заполнено: {', '.join(missing)}"
+                )
+        return self
 
 
 @lru_cache

@@ -251,6 +251,52 @@ def test_record_created_at_set_by_database(session):
     assert record.deleted_at is None
 
 
+def test_extraction_run_records_provider_and_model(session):
+    # Журнал прогонов (T4.1): датасет качества экстрактора и история ретраев.
+    from app.models import ExtractionRun
+
+    record = _make_record(session)
+    session.flush()
+    run = ExtractionRun(record_id=record.id, provider="openai_compatible", model="test-model")
+    session.add(run)
+    session.flush()
+    session.refresh(run)
+
+    assert run.status == "running"  # дефолт ставит БД
+    assert run.started_at is not None
+    assert run.finished_at is None
+    assert run.raw_response is None  # артефакт провайдера, опционален
+
+
+def test_extraction_run_rejects_unknown_status(session):
+    from sqlalchemy import text
+
+    from app.models import ExtractionRun
+
+    record = _make_record(session)
+    session.flush()
+    run = ExtractionRun(record_id=record.id, provider="p", model="m")
+    session.add(run)
+    session.flush()
+
+    with pytest.raises(IntegrityError):
+        session.execute(
+            text("UPDATE extraction_runs SET status = 'weird' WHERE id = :id"),
+            {"id": run.id},
+        )
+
+
+def test_record_suggested_patient_is_separate_from_choice(session):
+    # Предложение AI не затирает выбор человека (ветка B7 потока).
+    record = _make_record(session)
+    session.flush()
+    session.refresh(record)
+
+    assert record.suggested_patient_id is None
+    record.suggested_patient_id = record.patient_id
+    session.flush()
+
+
 def test_file_position_unique_within_record(session):
     # Порядок файлов значим (страницы документа) — дубль позиции
     # внутри одной записи должен резаться constraint'ом, не приложением.

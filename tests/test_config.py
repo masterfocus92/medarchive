@@ -77,6 +77,49 @@ def test_ignores_extra_env_keys(tmp_path):
     assert settings.database_url.endswith("/db")
 
 
+def _base_env(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/db")
+    monkeypatch.setenv("FILES_DIR", "./files")
+    monkeypatch.setenv("SECRET_KEY", TEST_SECRET)
+
+
+def test_extractor_disabled_by_default(monkeypatch):
+    # Машина без ключа остаётся рабочей (ADR-014): дефолт — disabled,
+    # конвейер честно кладёт parse_failed, приложение живёт.
+    _base_env(monkeypatch)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.extractor_provider == "disabled"
+
+
+def test_extractor_partial_config_fails_loudly(monkeypatch):
+    # Включённый провайдер без ключа/модели — ошибка старта, не сюрприз
+    # в рантайме (та же логика, что SECRET_KEY).
+    _base_env(monkeypatch)
+    monkeypatch.setenv("EXTRACTOR_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("EXTRACTOR_BASE_URL", "https://routerai.ru/api/v1")
+    # model и api_key не заданы
+
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(_env_file=None)
+
+    assert "extractor" in str(exc_info.value).lower()
+
+
+def test_extractor_full_config_accepted(monkeypatch):
+    _base_env(monkeypatch)
+    monkeypatch.setenv("EXTRACTOR_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("EXTRACTOR_BASE_URL", "https://routerai.ru/api/v1")
+    monkeypatch.setenv("EXTRACTOR_MODEL", "anthropic/claude-sonnet-5")
+    monkeypatch.setenv("EXTRACTOR_API_KEY", "test-key")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.extractor_provider == "openai_compatible"
+    assert settings.extractor_model == "anthropic/claude-sonnet-5"
+
+
 def test_reads_values_from_environment(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@localhost:5432/db")
     monkeypatch.setenv("FILES_DIR", "./files")
