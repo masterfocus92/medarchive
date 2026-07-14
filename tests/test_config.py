@@ -58,7 +58,7 @@ def test_short_secret_key_rejected(monkeypatch):
     assert "secret_key" in str(exc_info.value).lower()
 
 
-def test_ignores_extra_env_keys(tmp_path, monkeypatch):
+def test_ignores_extra_env_keys(tmp_path):
     # Регрессия: в .env лежат и ключи для docker compose (POSTGRES_*) —
     # они не должны валить старт приложения (extra="ignore").
     env_file = tmp_path / ".env"
