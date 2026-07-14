@@ -9,3 +9,24 @@
   <p>{{ text }}</p>
 </div>
 {% endmacro %}
+
+{# Поле ввода = label + control + опциональный helper (примитив кита §4).
+   for/id связывают подпись с контролом: в ките пример без связи, но для
+   доступности (DESIGN.MD §7) и тач-удобства подпись должна фокусировать поле.
+   Per-field error-состояние здесь не заведено сознательно (нет экрана,
+   которому оно нужно): на входе ошибка форменная, про пару, — её рендерит
+   сам login.html блоком .field.error. Заведётся, когда появится валидация
+   отдельного поля (POC — без абстракций «на вырост»). #}
+{% macro field(name, label, type="text", value="", autocomplete="", inputmode="", required=false, autofocus=false, helper="") %}
+<div class="field">
+  <label for="f-{{ name }}">{{ label }}</label>
+  <input class="control" id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value }}"
+    {%- if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}
+    {%- if inputmode %} inputmode="{{ inputmode }}"{% endif %}
+    {%- if required %} required{% endif %}
+    {%- if autofocus %} autofocus{% endif %}>
+  {%- if helper %}
+  <div class="helper">{{ helper }}</div>
+  {%- endif %}
+</div>
+{% endmacro %}

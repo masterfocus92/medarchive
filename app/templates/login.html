@@ -1,24 +1,26 @@
 {% extends "base.html" %}
+{% from "macros/ui.html" import field %}
 
 {% block title %}Вход — Семейная медкарта{% endblock %}
 
 {% block content %}
-{# Минимальная работающая форма по контракту T2.2-BE.
-   Вёрстка на примитивах кита (field, btn-primary) — scope T2.3-FE. #}
 <h1>Вход</h1>
 
 <form method="post" action="/login">
   {% if error %}
-  <p role="alert">{{ error }}</p>
+  {# Ошибка про пару email–пароль форменная, а не про отдельное поле: не
+     подсвечиваем один контрол, чтобы не намекать, что именно не так, и не
+     давать оракул «такой email существует» (ответы на неверный пароль и
+     несуществующий email обязаны быть неотличимы — тест в test_auth.py).
+     .field.error .helper даёт красный текст из кита; role="alert" — чтобы
+     скринридер озвучил отказ сразу. #}
+  <div class="field error">
+    <p class="helper" role="alert">{{ error }}</p>
+  </div>
   {% endif %}
-  <label>
-    Email
-    <input type="email" name="email" value="{{ email }}" required autofocus autocomplete="username">
-  </label>
-  <label>
-    Пароль
-    <input type="password" name="password" required autocomplete="current-password">
-  </label>
-  <button type="submit">Войти</button>
+  {{ field("email", "Email", type="email", value=email, autocomplete="username", inputmode="email", required=true, autofocus=true) }}
+  {{ field("password", "Пароль", type="password", autocomplete="current-password", required=true) }}
+  {# Одна первичная кнопка на экран (DESIGN.MD §5); btn-lg даёт тач-цель ≥44px. #}
+  <button type="submit" class="btn btn-primary btn-lg">Войти</button>
 </form>
 {% endblock %}

@@ -113,12 +113,51 @@ body {
 /* Фокус видим всегда, синими чернилами; outline не отключать (DESIGN.MD §7) */
 :focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
 
+/* Заголовок экрана. Первое использование — экран входа (T2.3-FE); значения
+   как у .d-h1 кита (serif/600/--t-h1). Нижний отступ — из шкалы. */
+h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter-spacing: -0.01em; margin-bottom: var(--s5); }
+
 /* ---------- Примитивы (по мере первого использования) ---------- */
 
 /* Пустой экран — приглашение к действию, не заглушка */
 .empty { text-align: center; padding: var(--s7) var(--s4); border: 1px dashed var(--rule); border-radius: var(--radius); }
 .empty h3 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h3); margin-bottom: var(--s2); }
 .empty p { color: var(--pencil); max-width: 320px; margin: 0 auto var(--s4); font-size: var(--t-small); }
+
+/* Кнопки. Первое использование — btn-primary на входе (T2.3-FE). Из кита
+   переносим только использованное: .btn, .btn-primary, .btn-lg (остальные
+   варианты добавятся на своих экранах — DESIGN.MD §4).
+   Hover primary в ките задан сырым hex-оттенком — сырой цвет в CSS экранов
+   запрещён (DESIGN.MD §2, тест-страж), а токена под этот оттенок нет.
+   Продукт touch-first (телефон, ховера нет) — hover сознательно опущен,
+   а не приближён неточным значением. */
+.btn {
+  font-family: var(--sans); font-size: var(--t-body); font-weight: 500;
+  padding: 10px var(--s4); border-radius: var(--radius-sm);
+  border: 1px solid transparent; cursor: pointer;
+  line-height: 1; transition: background .12s ease, border-color .12s ease;
+}
+.btn:focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
+.btn-primary { background: var(--ink-strong); color: var(--sheet); }
+.btn-lg { font-size: var(--t-lead); padding: 14px var(--s5); }
+
+/* Поле (label + control + helper/error). Первое использование — вход (T2.3-FE).
+   Полный примитив из кита: одно место на весь проект (DESIGN.MD §4).
+   Вариант .control.data (моноширинные даты/числа) добавится с первым
+   экраном ввода данных. */
+.field { margin-bottom: var(--s4); max-width: 380px; }
+.field label { display: block; font-size: var(--t-small); font-weight: 500; margin-bottom: var(--s2); }
+.field .opt { color: var(--pencil-soft); font-weight: 400; }
+.control {
+  width: 100%; font-family: var(--sans); font-size: var(--t-body); color: var(--ink);
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  padding: 10px var(--s3);
+}
+.control::placeholder { color: var(--pencil-soft); }
+.control:focus { outline: none; border-color: var(--ink-blue); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink-blue) 18%, transparent); }
+.helper { font-size: var(--t-caption); color: var(--pencil); margin-top: var(--s1); }
+.field.error .control { border-color: var(--red-pen); }
+.field.error .helper { color: var(--red-pen); }
 
 /* ---------- Платформа ---------- */
 
