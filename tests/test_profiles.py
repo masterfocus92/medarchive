@@ -96,6 +96,13 @@ def db_setup(admin_conn):
             birth_date=date(1990, 1, 1),
             sex="male",
         )
+        adult2 = FamilyMember(
+            family=family_a,
+            last_name="Иванова",
+            first_name="Мария",
+            birth_date=date(1992, 1, 1),
+            sex="female",
+        )
         child = FamilyMember(
             family=family_a,
             last_name="Иванова",
@@ -113,6 +120,7 @@ def db_setup(admin_conn):
         )
         session.add_all(
             [
+                adult2,
                 child,
                 stranger,
                 Account(member=operator, email=EMAIL, password_hash=hash_password(PASSWORD)),
@@ -182,6 +190,48 @@ def test_nonexistent_member_is_404(logged_in):
     response = logged_in.post("/profile/999999")
 
     assert response.status_code == 404
+
+
+# ---------- Интеграция: переключатель в шапке (T2.5-FE) ----------
+
+
+def test_switcher_shows_all_members_one_active(logged_in):
+    html = logged_in.get("/").text
+
+    # Три лица семьи, активный ровно один (по умолчанию — вошедший).
+    assert html.count('class="mono-badge"') == 3
+    assert html.count('aria-selected="true"') == 1
+    # Выход присутствует и обособлен от переключателя: настоящая форма.
+    assert 'action="/logout"' in html
+    assert "Выйти" in html
+
+
+def test_switcher_moves_active_mark_after_switch(logged_in, db_setup):
+    _, ids = db_setup
+
+    logged_in.post(f"/profile/{ids['child']}")
+    html = logged_in.get("/").text
+
+    # Активная пометка — внутри формы переключения на ребёнка.
+    child_form = html.split(f'action="/profile/{ids["child"]}"', 1)[1].split("</form>", 1)[0]
+    assert 'aria-selected="true"' in child_form
+    assert html.count('aria-selected="true"') == 1
+
+
+def test_empty_state_is_personalized(logged_in, db_setup):
+    _, ids = db_setup
+
+    # По умолчанию — вошедший (Дмитрий), после переключения — Анна.
+    assert "Дмитрий — записей пока нет" in logged_in.get("/").text
+    logged_in.post(f"/profile/{ids['child']}")
+    assert "Анна — записей пока нет" in logged_in.get("/").text
+
+
+def test_login_page_has_no_switcher(client):
+    html = client.get("/login").text
+
+    assert "mono-badge" not in html
+    assert 'action="/logout"' not in html
 
 
 def test_switch_without_session_redirects_to_login(client, db_setup):

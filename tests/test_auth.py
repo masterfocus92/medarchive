@@ -121,7 +121,8 @@ def test_login_success_opens_app(client):
     index = client.get("/")
     assert index.status_code == 200
     assert 'class="empty"' in index.text
-    assert "Записей пока нет" in index.text
+    # Заголовок персонализирован активным профилем (T2.5).
+    assert "записей пока нет" in index.text
 
 
 def test_wrong_password_rejected(client):

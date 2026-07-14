@@ -35,6 +35,8 @@ def index(
             {
                 "id": member.id,
                 "full_name": member.full_name,
+                # Подпись под монограммой — имя без фамилии (шапка тесная).
+                "first_name": member.first_name,
                 "initials": initials(member.first_name, member.last_name),
                 "is_active": member.id == active.id,
             }

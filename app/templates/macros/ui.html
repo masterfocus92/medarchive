@@ -3,6 +3,23 @@
    по экранам — блокер на ревью (DESIGN.MD §4). Макрос добавляется сюда,
    когда экран использует примитив впервые. #}
 
+{# Переключатель профилей (кит: switcher + mono-badge). Каждый бейдж —
+   кнопка в собственной форме POST: переключение работает без JS.
+   aria-selected — семантика активного (DESIGN.MD §7), стили кита
+   цепляются за него же. #}
+{% macro switcher(members) %}
+<nav class="switcher">
+  {% for member in members %}
+  <form method="post" action="/profile/{{ member.id }}">
+    <button type="submit" class="who" aria-selected="{{ 'true' if member.is_active else 'false' }}">
+      <span class="mono-badge">{{ member.initials }}</span>
+      <span>{{ member.first_name }}</span>
+    </button>
+  </form>
+  {% endfor %}
+</nav>
+{% endmacro %}
+
 {% macro empty(title, text) %}
 <div class="empty">
   <h3>{{ title }}</h3>

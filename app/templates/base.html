@@ -10,9 +10,17 @@
 </head>
 <body>
   <div class="wrap">
-    <header>
-      {# Место переключателя профилей (switcher + mono-badge) — этап 2. #}
+    {# Шапка приложения (кит: app-head) появляется на экранах, отдающих
+       members в контекст; на публичном /login её нет. #}
+    {% if members is defined and members %}
+    {% from "macros/ui.html" import switcher %}
+    <header class="app-head">
+      {{ switcher(members) }}
+      <form method="post" action="/logout">
+        <button type="submit" class="btn btn-quiet">Выйти</button>
+      </form>
     </header>
+    {% endif %}
     <main>
       {% block content %}{% endblock %}
     </main>
