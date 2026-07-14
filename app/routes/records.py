@@ -1,13 +1,15 @@
-"""Создание записи: форма и приём (flows/record-creation.md, t₀–t₂+ε)."""
+"""Создание записи и раздача её файлов (flows/record-creation.md)."""
 
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Account
+from app.models import Account, RecordFile
 from app.repositories.members import list_by_family
 from app.routes.deps import get_app_settings, get_current_account
 from app.routes.pages import templates
@@ -18,6 +20,8 @@ from app.services.records import (
     UnknownPatientError,
     create_record,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -91,3 +95,47 @@ def create_record_route(
     request.session["flash"] = TOAST_SAVED
     # Решение ❓2 потока: после сохранения — главная (карточка — Э5).
     return RedirectResponse("/", status_code=303)
+
+
+@router.get("/records/{record_id}/files/{position}")
+def record_file(
+    record_id: int,
+    position: int,
+    request: Request,
+    account: Annotated[Account, Depends(get_current_account)],
+    db: Annotated[Session, Depends(get_session)],
+) -> FileResponse:
+    """Файл записи — только своей семье (T3.3).
+
+    Middleware даёт аутентификацию; здесь — авторизация: запись обязана
+    принадлежать семье оператора. Чужая, несуществующая и удалённая
+    неразличимы (404) — не подтверждаем существование чужих данных.
+    Путь берётся строго из БД: traversal из URL невозможен по построению.
+    """
+    row = db.scalar(
+        select(RecordFile).where(
+            RecordFile.record_id == record_id,
+            RecordFile.position == position,
+        )
+    )
+    if (
+        row is None
+        or row.record.deleted_at is not None
+        or row.record.patient.family_id != account.member.family_id
+    ):
+        raise HTTPException(status_code=404)
+
+    settings = get_app_settings(request)
+    path = settings.files_dir / row.stored_path
+    if not path.is_file():
+        # Запись есть, файла нет — рассинхрон диска и БД: честный 404
+        # пользователю, тревожный лог нам.
+        logger.warning("Файл записи %s отсутствует на диске: %s", record_id, row.stored_path)
+        raise HTTPException(status_code=404)
+
+    return FileResponse(
+        path,
+        media_type=row.mime_type,
+        filename=row.original_name,
+        content_disposition_type="inline",
+    )

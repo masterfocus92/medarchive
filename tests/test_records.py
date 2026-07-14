@@ -309,6 +309,89 @@ def test_flash_toast_shown_once(client, db_setup):
     assert "Запись сохранена" not in second.text
 
 
+# ---------- T3.3: раздача файлов — только своей семье ----------
+
+
+@pytest.fixture
+def own_file_url(client, db_setup):
+    """Создаёт запись с файлом от лица оператора, возвращает URL файла."""
+    engine, ids = db_setup
+    _post_record(client, ids, files=[("скан.png", PNG, "image/png")])
+    with Session(engine) as session:
+        record = session.scalars(select(HealthRecord).order_by(HealthRecord.id.desc())).first()
+        return f"/records/{record.id}/files/1", record.id
+
+
+def test_own_file_is_served(client, own_file_url):
+    url, _ = own_file_url
+
+    response = client.get(url)
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/png")
+    assert response.content == PNG
+
+
+def test_foreign_family_file_is_404(client, db_setup, files_dir):
+    """Запись чужой семьи существует и файл лежит на диске — но для нас её нет."""
+    engine, ids = db_setup
+
+    with Session(engine) as session:
+        stranger = session.get(FamilyMember, ids["stranger"])
+        stranger_account = Account(member=stranger, email="stranger@test.local", password_hash="x")
+        record = HealthRecord(author=stranger_account, patient=stranger, comment="чужая запись")
+        session.add(record)
+        session.flush()
+        stored_path = f"{record.id}/01.png"
+        (files_dir / str(record.id)).mkdir(parents=True, exist_ok=True)
+        (files_dir / stored_path).write_bytes(PNG)
+        session.add(
+            RecordFile(
+                record_id=record.id,
+                position=1,
+                stored_path=stored_path,
+                original_name="чужое.png",
+                mime_type="image/png",
+                size_bytes=len(PNG),
+            )
+        )
+        session.commit()
+        foreign_id = record.id
+
+    response = client.get(f"/records/{foreign_id}/files/1")
+
+    assert response.status_code == 404
+
+
+def test_nonexistent_file_is_404(client, own_file_url):
+    url, record_id = own_file_url
+
+    assert client.get(f"/records/{record_id}/files/99").status_code == 404
+    assert client.get("/records/999999/files/1").status_code == 404
+
+
+def test_file_requires_session(app, own_file_url):
+    url, _ = own_file_url
+    anonymous = TestClient(app, follow_redirects=False)
+
+    response = anonymous.get(url)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/login"
+
+
+def test_missing_file_on_disk_is_404_not_500(client, own_file_url, files_dir, db_setup):
+    url, record_id = own_file_url
+    engine, _ = db_setup
+    with Session(engine) as session:
+        row = session.scalar(select(RecordFile).where(RecordFile.record_id == record_id))
+        (files_dir / row.stored_path).unlink()
+
+    response = client.get(url)
+
+    assert response.status_code == 404
+
+
 def test_records_count_on_index_for_active_profile(client, db_setup):
     _, ids = db_setup
     _post_record(client, ids, comment="ещё заметка")
