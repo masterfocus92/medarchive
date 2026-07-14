@@ -294,6 +294,38 @@ def test_awaiting_review_block_appears_and_clears(client, db_setup):
     assert f'href="/records/{record_id}"' not in index
 
 
+# ---------- T4.5: дизайн-контракт экрана проверки ----------
+
+
+def test_screen_design_contract(client, db_setup):
+    record_id = _create_with_file(client, db_setup)
+    _set(db_setup, record_id, parse_status="parsed", record_type="анализ")
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert html.count("btn-primary") == 1  # одна первичная — «Сохранить»
+    assert 'class="control data"' in html  # дата — моноширинный бланк (кит §3)
+    assert 'class="chip"' in html  # тип записи — чип (первое использование)
+    assert 'class="status-line"' in html  # статус — текстом, всегда виден
+
+
+def test_suggested_patient_is_highlighted(client, db_setup):
+    record_id = _create_with_file(client, db_setup)
+    engine, ids = db_setup
+    with Session(engine) as session:
+        record = session.get(HealthRecord, record_id)
+        operator_id = record.author.family_member_id
+        record.patient_id = operator_id  # выбран оператор
+        record.suggested_patient_id = ids["child"]  # AI считает — дочь
+        record.parse_status = "parsed"
+        session.commit()
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert "AI считает" in html
+    assert 'class="who suggested"' in html  # монограмма предложения подсвечена
+
+
 def test_confirmed_at_set_by_note_creation_shows_no_retry(client, db_setup):
     record_id = _create_note(client, db_setup)
 

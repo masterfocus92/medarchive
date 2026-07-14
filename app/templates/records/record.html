@@ -10,23 +10,22 @@
 {% endblock %}
 
 {% block content %}
-{# Экран проверки (T4.4; вёрстка — T4.5). Он же — режим правки (Э6). #}
-<h1>Запись</h1>
+{# Экран проверки (T4.4/T4.5). Он же — режим правки (Э6). #}
+<h1>{{ record.title or "Запись" }}
+{% if record.record_type %} <span class="chip">{{ record.record_type }}</span>{% endif %}</h1>
 
-<p>Статус: <strong>{{ status_label }}</strong>
+<p class="status-line">статус: {{ status_label }}</p>
 {% if can_retry %}
-</p>
 <form method="post" action="/records/{{ record.id }}/reparse">
+  {# Ошибка не тупик: разбор перезапускается одной кнопкой (❓6). #}
   <button type="submit" class="btn btn-secondary">Разобрать ещё раз</button>
 </form>
-<p>
 {% endif %}
-</p>
 
 {% if record_files %}
-<p>Страницы:
+<p class="status-line">страницы:
 {% for f in record_files %}
-  <a href="{{ f.url }}">стр. {{ f.position }}</a>
+  <a href="{{ f.url }}">{{ f.position }}</a>
 {% endfor %}
 </p>
 {% endif %}
@@ -94,7 +93,7 @@
     {% endif %}
     <div class="switcher patient-pick">
       {% for member in members %}
-      <label class="who">
+      <label class="who{% if suggested_patient and member.id == suggested_patient.id %} suggested{% endif %}">
         <input type="radio" name="patient_id" value="{{ member.id }}"
           {% if member.id == record.patient_id %}checked{% endif %}>
         <span class="mono-badge">{{ member.initials }}</span>

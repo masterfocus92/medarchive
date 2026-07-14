@@ -210,6 +210,35 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 
 /* Числа-данные (счётчик записей) — «записано в бланк» */
 .rec-count { font-family: var(--mono); }
+/* Даты в списках — тем же правилом кита */
+.rec-date { font-family: var(--mono); font-size: var(--t-small); color: var(--pencil); }
+
+/* Данные вводятся моноширинным — «записано в бланк» (кит §3) */
+.control.data { font-family: var(--mono); }
+
+/* Чип — тип записи, открытое поле (кит) */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: var(--t-caption); letter-spacing: 0.02em;
+  color: var(--pencil); background: transparent;
+  border: 1px solid var(--rule); border-radius: 999px;
+  padding: 4px 10px;
+}
+
+/* Статус разбора — всегда виден текстом (DESIGN.MD §5), служебная строка */
+.status-line {
+  font-family: var(--mono); font-size: var(--t-small); color: var(--pencil);
+  margin-bottom: var(--s4);
+}
+
+/* Предложение AI на выборе пациента: пунктирная обводка монограммы —
+   приглашение, не выбор (выбор — сплошные чернила) */
+.patient-pick .who.suggested .mono-badge { border: 1px dashed var(--ink-blue); }
+
+/* Блок «Ждут проверки» на главной (временный вход до ленты Э5) */
+.awaiting { margin-bottom: var(--s5); }
+.awaiting h3 { font-family: var(--serif); font-size: var(--t-h3); font-weight: 600; margin-bottom: var(--s2); }
+.awaiting ul { list-style: none; display: grid; gap: var(--s2); }
 /* Сводка на главной: воздух между счётчиком и действием */
 .records-summary { margin-bottom: var(--s4); }
 
