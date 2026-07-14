@@ -8,6 +8,8 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import Settings, get_settings
@@ -34,6 +36,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Настройки — на app.state: роуты берут их через get_app_settings,
     # не трогая глобальный get_settings() (тестам не нужен .env).
     app.state.settings = settings
+    # Фабрика сессий для фоновых задач (конвейер разбора): фон живёт вне
+    # запроса и не проходит через dependency get_session — ему нужен свой
+    # вход в БД, собранный из настроек ЭТОГО приложения (важно тестам).
+    app.state.session_factory = sessionmaker(bind=create_engine(settings.database_url))
 
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(system.router)

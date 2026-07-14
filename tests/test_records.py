@@ -242,7 +242,10 @@ def test_photo_with_note_creates_uploaded_record(client, db_setup, files_dir, co
 
     with Session(engine) as session:
         record = session.scalars(select(HealthRecord).order_by(HealthRecord.id.desc())).first()
-        assert record.parse_status == "uploaded"
+        # TestClient выполняет BackgroundTasks синхронно: конвейер уже
+        # отработал, а тестовый экстрактор disabled → честный parse_failed
+        # (сохранение не пострадало — инвариант). Живой конвейер — test_pipeline.
+        assert record.parse_status == "parse_failed"
         assert record.confirmed_at is None  # подтвердит человек после разбора (Э4)
         assert record.comment == "первый приём"
         assert record.patient_id == ids["child"]

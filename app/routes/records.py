@@ -3,16 +3,26 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Account, RecordFile
+from app.models import Account, ParseStatus, RecordFile
 from app.repositories.members import list_by_family
 from app.routes.deps import get_app_settings, get_current_account
 from app.routes.pages import templates
+from app.services.pipeline import run_extraction
 from app.services.profiles import switcher_context
 from app.services.records import (
     EmptyRecordError,
@@ -60,6 +70,7 @@ def new_record_form(
 @router.post("/records")
 def create_record_route(
     request: Request,
+    background_tasks: BackgroundTasks,
     account: Annotated[Account, Depends(get_current_account)],
     db: Annotated[Session, Depends(get_session)],
     patient_id: Annotated[int, Form()],
@@ -72,7 +83,7 @@ def create_record_route(
     pairs = [(upload.filename, upload.file.read()) for upload in (files or []) if upload.filename]
 
     try:
-        create_record(
+        record = create_record(
             db,
             files_dir=settings.files_dir,
             author=account,
@@ -91,6 +102,16 @@ def create_record_route(
         # Ветка B6 потока: сбой записи на диск. Компенсация уже отработала
         # в сервисе — пользователю честный текст и сохранённая форма.
         return _render_form(request, account, db, error=SAVE_FAILED_ERROR, comment=comment)
+
+    # Конвейер разбора (Э4, ❓5): фоном, после ответа — «сохранено
+    # мгновенно» и «разобрано» разделены by design.
+    if record.parse_status == ParseStatus.UPLOADED:
+        background_tasks.add_task(
+            run_extraction,
+            record.id,
+            settings=settings,
+            session_factory=request.app.state.session_factory,
+        )
 
     request.session["flash"] = TOAST_SAVED
     # Решение ❓2 потока: после сохранения — главная (карточка — Э5).
