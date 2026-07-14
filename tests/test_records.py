@@ -462,14 +462,15 @@ def test_missing_file_on_disk_is_404_not_500(client, own_file_url, files_dir, db
     assert response.status_code == 404
 
 
-def test_records_count_on_index_for_active_profile(client, db_setup):
+def test_created_record_appears_on_index_for_active_profile(client, db_setup):
+    """Временный счётчик Э3 заменён лентой (Э5): созданная запись видна
+    на главной активного профиля, пустое состояние не врёт."""
     _, ids = db_setup
     _post_record(client, ids, comment="ещё заметка")
 
-    # Счётчик — по активному профилю: записи создавались на дочь.
+    # Лента — по активному профилю: записи создавались на дочь.
     client.post(f"/profile/{ids['child']}")
     response = client.get("/")
 
-    # Пустое состояние не врёт: вместо него — счётчик записей.
-    assert "записей:" in response.text.lower()
+    assert 'class="record compact"' in response.text
     assert 'class="empty"' not in response.text

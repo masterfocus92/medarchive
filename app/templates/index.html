@@ -6,26 +6,32 @@
 {{ toast(flash) }}
 {% endif %}
 
-{% if awaiting_review %}
-{# Временный вход на экран проверки — ленту даст Э5. #}
-<div class="card awaiting">
-  <h3>Ждут проверки</h3>
-  <ul>
-    {% for record in awaiting_review %}
-    <li>
-      <a href="/records/{{ record.id }}">{{ record.title or "Запись без названия" }}</a>
-      — <span class="rec-date">{{ record.created_at.strftime("%d.%m.%Y") }}</span>
-    </li>
-    {% endfor %}
-  </ul>
-</div>
-{% endif %}
-
-{% if records_count %}
-{# Временная замена ленты (Э5): счётчик, чтобы пустое состояние не врало.
-   Число — моноширинное (правило кита: данные — mono). #}
-<p class="records-summary">{{ active_member.first_name }} — записей: <span class="rec-count">{{ records_count }}</span></p>
+{% if records %}
 <a class="btn btn-primary btn-lg" href="/records/new">Добавить запись</a>
+
+{# Переключатель сортировки (❓1 потока просмотра) #}
+<nav class="feed-sort">
+  <a class="btn btn-quiet" href="/" {% if sort == "created" %}aria-current="true"{% endif %}>по внесению</a>
+  <a class="btn btn-quiet" href="/?sort=event" {% if sort == "event" %}aria-current="true"{% endif %}>по событию</a>
+</nav>
+
+<ul class="feed">
+  {% for r in records %}
+  <li>
+    <a class="record compact" href="/records/{{ r.id }}">
+      <div class="rec-head">
+        <span class="rec-title">{{ r.title or "Запись без названия" }}</span>
+        <span class="rec-date">{{ (r.event_date or r.created_at).strftime("%d.%m.%Y") }}</span>
+      </div>
+      <div class="rec-meta">
+        {% if r.record_type %}<span class="chip">{{ r.record_type }}</span>{% endif %}
+        {% if r.clinic %}<span>{{ r.clinic }}</span>{% endif %}
+        {% if r.status_label %}<span class="status-badge">{{ r.status_label }}</span>{% endif %}
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
 {% else %}
 {# Имя — в именительном падеже через тире: русские имена в косвенных
    падежах («У Анны») без морфологии корректно не просклонять. #}

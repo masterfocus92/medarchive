@@ -159,6 +159,42 @@ def _record_context(request: Request, account: Account, db: Session, record) -> 
     return context
 
 
+def _view_context(request: Request, account: Account, db: Session, record) -> dict:
+    """Контекст карточки просмотра (T5.3).
+
+    Доступность файла проверяется здесь, а не в шаблоне: пропавший с диска
+    файл (ветка B7 потока) должен дать плашку и warning-лог, а не битую
+    картинку и тем более не 500.
+    """
+    settings = get_app_settings(request)
+    members = list_by_family(db, account.member.family_id)
+    pages = []
+    for f in record.files:
+        available = (settings.files_dir / f.stored_path).is_file()
+        if not available:
+            logger.warning("Файл записи %s отсутствует на диске: %s", record.id, f.stored_path)
+        pages.append(
+            {
+                "position": f.position,
+                "url": f"/records/{record.id}/files/{f.position}",
+                "mime": f.mime_type,
+                # PDF не рендерится в превью (❓6) — шаблону нужен явный признак.
+                "is_pdf": f.mime_type == "application/pdf",
+                "available": available,
+            }
+        )
+    context = switcher_context(request.session, account, members)
+    context.update(
+        {
+            "record": record,
+            "status_label": CONFIRMED_LABEL,
+            "pages": pages,
+            "page_count": len(pages),
+        }
+    )
+    return context
+
+
 @router.get("/records/{record_id}", response_class=HTMLResponse)
 def record_screen(
     record_id: int,
@@ -169,6 +205,13 @@ def record_screen(
     record = get_for_family(db, record_id, account.member.family_id)
     if record is None:
         raise HTTPException(status_code=404)
+    # Ветвление потока просмотра (t₂): подтверждённой записи — карточка,
+    # неподтверждённой — экран проверки. Один URL на оба состояния: ссылки
+    # из ленты не должны знать, проверена ли запись.
+    if record.confirmed_at is not None:
+        return templates.TemplateResponse(
+            request, "records/view.html", _view_context(request, account, db, record)
+        )
     return templates.TemplateResponse(
         request, "records/record.html", _record_context(request, account, db, record)
     )

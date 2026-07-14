@@ -1,5 +1,5 @@
 """Тесты экрана записи/проверки (T4.4): доступ, черновик, подтверждение,
-ретрай, блок «ждут проверки»."""
+ретрай, статус-бейдж неподтверждённой записи в ленте (Э5)."""
 
 import io
 from datetime import date
@@ -137,14 +137,17 @@ def _set(db_setup, record_id, **values):
 
 
 def test_own_record_screen_renders(client, db_setup):
+    """Заметка подтверждена при создании — с Э5 её URL открывает карточку
+    просмотра (ветвление t₂ потока), а не экран проверки."""
     record_id = _create_note(client, db_setup, comment="рост 68 см")
 
     response = client.get(f"/records/{record_id}")
 
     assert response.status_code == 200
     assert "рост 68 см" in response.text
-    assert 'name="patient_id"' in response.text
-    assert "подтверждено" in response.text  # заметка подтверждена при создании
+    assert "подтверждено" in response.text
+    # Экран проверки не показан: карточка read-only (❓8), формы нет.
+    assert 'name="patient_id"' not in response.text
 
 
 def test_foreign_and_missing_records_are_404(client, db_setup):
@@ -279,19 +282,31 @@ def test_reparse_noop_when_not_allowed(client, db_setup):
     assert runs == 0
 
 
-def test_awaiting_review_block_appears_and_clears(client, db_setup):
+def _feed_item(html: str, record_id: int) -> str:
+    """Вырезать из ленты элемент конкретной записи: бейджи соседних записей
+    (модульная БД накапливает их) не должны влиять на проверку."""
+    start = html.index(f'href="/records/{record_id}"')
+    return html[start : html.index("</a>", start)]
+
+
+def test_unconfirmed_record_wears_badge_in_feed(client, db_setup):
+    """Блок «Ждут проверки» упразднён (поток просмотра, ❓2): его роль
+    выполняет статус-бейдж на элементе ленты."""
     record_id = _create_with_file(client, db_setup)
     _set(db_setup, record_id, parse_status="parsed", title="Ждущая запись")
     _, ids = db_setup
 
+    # Запись создана на ребёнка — лента показывает только активный профиль.
+    client.post(f"/profile/{ids['child']}")
     index = client.get("/").text
-    assert "Ждут проверки" in index
-    assert f'href="/records/{record_id}"' in index
+    assert "Ждут проверки" not in index
+    assert "разобрано" in _feed_item(index, record_id)
 
     client.post(f"/records/{record_id}/confirm", data={"patient_id": ids["child"]})
 
+    # Подтверждённая запись остаётся в ленте, но бейдж больше не носит.
     index = client.get("/").text
-    assert f'href="/records/{record_id}"' not in index
+    assert "разобрано" not in _feed_item(index, record_id)
 
 
 # ---------- T4.5: дизайн-контракт экрана проверки ----------

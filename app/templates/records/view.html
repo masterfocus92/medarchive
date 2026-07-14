@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ record.title or "Запись" }} — Семейная медкарта{% endblock %}
+
+{% block content %}
+{# Карточка просмотра (T5.4) — полная композиция record из кита.
+   Read-only по решению ❓8: правка и удаление — этап 6; неподтверждённые
+   записи сюда не попадают (ветвление в роуте ведёт их на экран проверки). #}
+<a class="btn btn-quiet" href="/">← В ленту</a>
+
+<article class="record">
+  <div class="rec-head">
+    <div>
+      <span class="rec-title">{{ record.title or "Запись без названия" }}</span>
+      {% if record.record_type %} <span class="chip">{{ record.record_type }}</span>{% endif %}
+    </div>
+    {% if record.event_date %}<span class="rec-date">{{ record.event_date.strftime("%d.%m.%Y") }}</span>{% endif %}
+  </div>
+  <div class="rec-body">
+    <div class="rec-meta">
+      {% if record.clinic %}<div class="m"><div class="k">Клиника</div><div class="v">{{ record.clinic }}</div></div>{% endif %}
+      {% if record.doctor %}<div class="m"><div class="k">Врач</div><div class="v">{{ record.doctor }}</div></div>{% endif %}
+      {# Дата внесения — всегда есть (инвариант): показывается отдельно от
+         даты события, чтобы «когда было» и «когда внесли» не путались. #}
+      <div class="m"><div class="k">Внесено</div><div class="v rec-date">{{ record.created_at.strftime("%d.%m.%Y") }}</div></div>
+    </div>
+    {% if record.content %}
+    <div class="rec-content">{{ record.content }}</div>
+    {% endif %}
+    {% if record.comment %}
+    {# Заметка — карандаш: визуально отделена от фактов без подписей. #}
+    <div class="pencil-note">{{ record.comment }}</div>
+    {% endif %}
+    <p class="status-line">статус: {{ status_label }}</p>
+  </div>
+</article>
+
+{% if pages %}
+{# Страницы вертикальным потоком (❓4): листание = естественный скролл,
+   ноль JS. Порядок — position из БД. #}
+<ul class="pages flow">
+  {% for p in pages %}
+  <li>
+    {% if not p.available %}
+    {# Ветка B7: рассинхрон диска и БД — честная плашка, не битая картинка. #}
+    <p class="page-plate">файл недоступен</p>
+    {% elif p.is_pdf %}
+    {# Ветка B4/❓6: PDF без серверного превью — нативный просмотрщик. #}
+    <a class="page-plate" href="{{ p.url }}" target="_blank">PDF · открыть</a>
+    {% else %}
+    {# Тап по фото — оригинал в полный размер в новой вкладке (❓4). #}
+    <a href="{{ p.url }}" target="_blank"><img src="{{ p.url }}" alt="стр. {{ p.position }}" loading="lazy"></a>
+    {% endif %}
+    <div class="page-caption">
+      <span class="rec-date">стр. {{ p.position }} из {{ page_count }}</span>
+      {% if p.available %}
+      {# Скачивание — атрибут download на файловый роут (❓5), без нового бэкенда. #}
+      <a class="btn btn-quiet" href="{{ p.url }}" download>Скачать</a>
+      {% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

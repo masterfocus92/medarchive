@@ -5,10 +5,35 @@
 функцией, а не флагом по месту вызова.
 """
 
-from sqlalchemy import func, select
+from sqlalchemy import Date, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.models import FamilyMember, HealthRecord, ParseStatus
+
+FEED_SORTS = ("created", "event")
+
+
+def list_by_patient(session: Session, patient_id: int, sort: str = "created") -> list[HealthRecord]:
+    """Лента профиля (❓1 потока просмотра): «по внесению» — хроника того,
+    что вносили; «по событию» — медицинская хронология, записи без даты
+    события встают по дате внесения. Удалённые отфильтрованы по умолчанию."""
+    if sort == "event":
+        order = (
+            func.coalesce(HealthRecord.event_date, cast(HealthRecord.created_at, Date)).desc(),
+            HealthRecord.created_at.desc(),
+        )
+    else:
+        order = (HealthRecord.created_at.desc(),)
+    return list(
+        session.scalars(
+            select(HealthRecord)
+            .where(
+                HealthRecord.patient_id == patient_id,
+                HealthRecord.deleted_at.is_(None),
+            )
+            .order_by(*order)
+        )
+    )
 
 
 def count_by_patient(session: Session, patient_id: int) -> int:

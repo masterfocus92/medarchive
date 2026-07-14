@@ -11,7 +11,10 @@ from app.models import Base
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # disable_existing_loggers=False обязателен: тесты гоняют миграции через
+    # API в одном процессе с приложением, и дефолтное True молча глушит уже
+    # созданные логгеры роутов — пропадают warning'и, которые тесты проверяют.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

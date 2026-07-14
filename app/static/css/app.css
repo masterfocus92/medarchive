@@ -208,9 +208,7 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 }
 .toast .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--green-ink); }
 
-/* Числа-данные (счётчик записей) — «записано в бланк» */
-.rec-count { font-family: var(--mono); }
-/* Даты в списках — тем же правилом кита */
+/* Даты в списках — правило кита: данные — mono */
 .rec-date { font-family: var(--mono); font-size: var(--t-small); color: var(--pencil); }
 
 /* Данные вводятся моноширинным — «записано в бланк» (кит §3) */
@@ -235,12 +233,43 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
    приглашение, не выбор (выбор — сплошные чернила) */
 .patient-pick .who.suggested .mono-badge { border: 1px dashed var(--ink-blue); }
 
-/* Блок «Ждут проверки» на главной (временный вход до ленты Э5) */
-.awaiting { margin-bottom: var(--s5); }
-.awaiting h3 { font-family: var(--serif); font-size: var(--t-h3); font-weight: 600; margin-bottom: var(--s2); }
-.awaiting ul { list-style: none; display: grid; gap: var(--s2); }
-/* Сводка на главной: воздух между счётчиком и действием */
-.records-summary { margin-bottom: var(--s4); }
+/* ---------- Лента (Э5, T5.2) ---------- */
+
+/* Композиция record (кит §4.7) — «лист записи». Базовые значения — из кита. */
+.record { background: var(--sheet); border: var(--hair); border-radius: var(--radius); overflow: hidden; }
+.record .rec-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: var(--s4); border-bottom: var(--hair);
+}
+.record .rec-title { font-family: var(--serif); font-size: var(--t-h3); font-weight: 600; }
+.rec-meta { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-bottom: var(--s3); }
+
+/* Запись-ссылка: весь элемент ленты ведёт на карточку или проверку */
+a.record { display: block; color: inherit; text-decoration: none; }
+a.record:hover { border-color: var(--pencil); }
+
+/* Компакт-вариант — элемент ленты: без сниппета содержания (лента
+   отвечает «что и когда», подробности — в карточке) */
+.record.compact { padding: var(--s3) var(--s4); }
+.record.compact .rec-head { padding: 0; border-bottom: none; margin-bottom: var(--s2); gap: var(--s3); }
+.record.compact .rec-title { font-size: var(--t-body); }
+/* В компакте meta — одна строка мелких пометок, не пары «ключ-значение» */
+.record.compact .rec-meta { margin-bottom: 0; align-items: center; gap: var(--s2); font-size: var(--t-small); color: var(--pencil); }
+
+/* Статус-бейдж — только у неподтверждённых (ADR-012, ❓2 потока):
+   карандашная служебная пометка, норма не маркируется */
+.status-badge {
+  display: inline-flex; align-items: center;
+  font-family: var(--mono); font-size: var(--t-caption);
+  color: var(--pencil); background: color-mix(in srgb, var(--pencil) 10%, transparent);
+  border-radius: var(--radius-sm); padding: 3px 8px;
+}
+
+.feed { list-style: none; display: grid; gap: var(--s2); }
+.feed-sort { display: flex; gap: var(--s1); margin: var(--s4) 0 var(--s3); }
+/* Активная сортировка — состояние, не переход: чернила, без подчёркивания */
+.btn-quiet[aria-current="true"] { color: var(--ink); font-weight: 500; }
+.btn-quiet[aria-current="true"]:hover { text-decoration: none; }
 
 /* ---------- Экран добавления записи (T3.4, композиция страницы) ---------- */
 
@@ -271,6 +300,44 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
   color: var(--red-pen); font-family: var(--sans); font-size: var(--t-body);
   padding: var(--s3);
 }
+
+/* ---------- Карточка записи (Э5, T5.4) ---------- */
+
+/* Отступ от кнопки «В ленту»: article — только карточка просмотра,
+   компакт-записи ленты (a.record) правило не задевает */
+article.record { margin-top: var(--s3); }
+
+/* Полная композиция record (кит §4.7): тело, пары «ключ-значение», содержание */
+.record .rec-body { padding: var(--s4); }
+.rec-meta .m { display: flex; flex-direction: column; }
+.rec-meta .m .k { font-size: var(--t-caption); color: var(--pencil-soft); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); }
+.rec-meta .m .v { font-size: var(--t-body); }
+.rec-content { color: var(--ink); font-size: var(--t-body); padding: var(--s3) 0; border-top: var(--rule-soft) 1px dashed; }
+
+/* Карандашная заметка (кит) — первое использование вывода: заметка на карточке */
+.pencil-note {
+  font-family: var(--serif); font-style: italic; color: var(--pencil);
+  border-left: 2px solid var(--rule); padding: var(--s1) 0 var(--s1) var(--s3);
+  font-size: var(--t-body); line-height: 1.5;
+}
+
+/* Страницы карточки — вертикальный поток (❓4): листание = естественный
+   скролл, ноль JS. Расширение блока .pages из T3.4: там — ряды-миниатюры
+   формы, здесь — «листы» на ширину колонки. */
+.pages.flow { gap: var(--s4); }
+.pages.flow li { background: var(--sheet); border: var(--hair); border-radius: var(--radius); padding: var(--s3); }
+.pages.flow img { display: block; width: 100%; height: auto; border: var(--hair); border-radius: var(--radius-sm); }
+.page-caption { display: flex; align-items: center; justify-content: space-between; margin-top: var(--s2); }
+/* Плашка вместо превью: PDF (нативный просмотрщик, ❓6) и пропавший файл (B7) —
+   честное состояние текстом, не битая картинка */
+.page-plate {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 120px; font-family: var(--mono); font-size: var(--t-small);
+  color: var(--pencil); background: var(--paper);
+  border: 1px dashed var(--rule); border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+a.page-plate:hover { border-color: var(--pencil); color: var(--ink); }
 
 /* ---------- Платформа ---------- */
 
