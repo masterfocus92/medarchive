@@ -18,6 +18,7 @@
     --sheet:       #FCFBF8;  /* поднятая поверхность — карточка */
     --ink:         #1E1C19;  /* чернила — основной текст, факты */
     --ink-strong:  #262B33;  /* тёмно-синие чернила — первичное действие */
+    --ink-strong-hover: #1A1F26; /* hover первичного действия (только десктоп) */
     --pencil:      #6B665D;  /* карандаш — второстепенный текст, пометки */
     --pencil-soft: #9A948A;  /* бледный карандаш — подписи, плейсхолдеры */
     --rule:        #DAD6CB;  /* линовка — тонкие разделители, рамки */
@@ -123,7 +124,7 @@
   }
   .btn:focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
   .btn-primary { background: var(--ink-strong); color: var(--sheet); }
-  .btn-primary:hover { background: #1a1f26; }
+  .btn-primary:hover { background: var(--ink-strong-hover); }
   .btn-secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
   .btn-secondary:hover { border-color: var(--pencil); }
   .btn-quiet { background: transparent; color: var(--ink-blue); padding-left: var(--s2); padding-right: var(--s2); }
@@ -177,10 +178,18 @@
     font-family: var(--serif); font-weight: 600; font-size: var(--t-body); color: var(--ink);
   }
   .switcher { display: flex; gap: var(--s2); align-items: center; }
-  .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); }
+  /* .who — настоящая <button> (переключение — обычная форма, без JS):
+     сброс дефолтного вида кнопки входит в примитив. */
+  .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); background: none; border: none; font-family: inherit; }
   .switcher .who span { font-size: var(--t-caption); color: var(--pencil); }
   .switcher .who[aria-selected="true"] .mono-badge { border-color: var(--ink); border-width: 2px; }
   .switcher .who[aria-selected="true"] span { color: var(--ink); font-weight: 500; }
+
+  /* --- Шапка приложения (композиция: переключатель + обособленный выход) --- */
+  .app-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s6); }
+  /* Последний элемент (выход; в приложении — форма с кнопкой) обособлен
+     справа: это не действие из ряда выбора профиля. */
+  .app-head > :last-child { margin-left: auto; }
 
   /* --- Карточка / лист --- */
   .card { background: var(--sheet); border: var(--hair); border-radius: var(--radius); padding: var(--s4); }
@@ -330,11 +339,25 @@
   <section>
     <div class="sec-label">Переключатель профиля — без картинок, инициалы</div>
     <div class="switcher">
-      <div class="who" aria-selected="true"><div class="mono-badge">Д</div><span>Дмитрий</span></div>
-      <div class="who"><div class="mono-badge">М</div><span>Мария</span></div>
-      <div class="who"><div class="mono-badge">А</div><span>Аня</span></div>
+      <button class="who" aria-selected="true"><span class="mono-badge">ДИ</span><span>Дмитрий</span></button>
+      <button class="who"><span class="mono-badge">МИ</span><span>Мария</span></button>
+      <button class="who"><span class="mono-badge">АИ</span><span>Аня</span></button>
     </div>
-    <p class="note">Монограмма из инициала вместо фото — в духе бумаги и без изображений. Активный профиль обведён чернилами.</p>
+    <p class="note">Монограмма из инициалов (имя + фамилия) вместо фото — в духе бумаги и без изображений. Активный профиль обведён чернилами. Каждый элемент — настоящая кнопка в форме POST: переключение работает без JS.</p>
+  </section>
+
+  <!-- ШАПКА ПРИЛОЖЕНИЯ (КОМПОЗИЦИЯ) -->
+  <section>
+    <div class="sec-label">Шапка приложения — переключатель + выход</div>
+    <div class="app-head">
+      <div class="switcher">
+        <button class="who" aria-selected="true"><span class="mono-badge">ДИ</span><span>Дмитрий</span></button>
+        <button class="who"><span class="mono-badge">МИ</span><span>Мария</span></button>
+        <button class="who"><span class="mono-badge">АИ</span><span>Аня</span></button>
+      </div>
+      <button class="btn btn-quiet">Выйти</button>
+    </div>
+    <p class="note">Верх каждого экрана приложения: три лица семьи на расстоянии одного тапа. Выход — btn-quiet, отодвинут вправо: это не действие из ряда выбора профиля. На экране входа шапка пуста.</p>
   </section>
 
   <!-- ЗАПИСЬ (КОМПОЗИЦИЯ) -->
