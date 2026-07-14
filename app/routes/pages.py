@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 from app.db import get_session
 from app.models import Account
 from app.repositories.members import list_by_family
+from app.repositories.records import count_by_patient
 from app.routes.deps import get_current_account
-from app.services.profiles import initials, resolve_active_member
+from app.services.profiles import switcher_context
 
 router = APIRouter()
 
@@ -28,20 +29,8 @@ def index(
     db: Annotated[Session, Depends(get_session)],
 ) -> HTMLResponse:
     members = list_by_family(db, account.member.family_id)
-    active = resolve_active_member(request.session, account, members)
-    # Контракт T2.4-BE для переключателя (рендер — T2.5-FE).
-    context = {
-        "members": [
-            {
-                "id": member.id,
-                "full_name": member.full_name,
-                # Подпись под монограммой — имя без фамилии (шапка тесная).
-                "first_name": member.first_name,
-                "initials": initials(member.first_name, member.last_name),
-                "is_active": member.id == active.id,
-            }
-            for member in members
-        ],
-        "active_member": active,
-    }
+    context = switcher_context(request.session, account, members)
+    context["records_count"] = count_by_patient(db, context["active_member"].id)
+    # Flash-тост: положил-показал-стёр (контракт T3.2).
+    context["flash"] = request.session.pop("flash", None)
     return templates.TemplateResponse(request, "index.html", context)

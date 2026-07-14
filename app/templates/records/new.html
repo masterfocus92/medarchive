@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Новая запись — Семейная медкарта{% endblock %}
+
+{% block content %}
+{# Минимальная работающая форма по контракту T3.2-BE.
+   Оба потока контента (камера/пикер), превью и JS — scope T3.4-FE. #}
+<h1>Новая запись</h1>
+
+<form method="post" action="/records" enctype="multipart/form-data">
+  {% if error %}
+  <div class="field error">
+    <p class="helper" role="alert">{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <div class="field">
+    <label for="f-files">Фото или файл документа</label>
+    <input class="control" id="f-files" name="files" type="file" multiple
+      accept="image/jpeg,image/png,image/webp,image/heic,application/pdf">
+    <div class="helper">Можно несколько страниц: фото или PDF, до 20 МБ каждый.</div>
+  </div>
+
+  <div class="field">
+    <label for="f-comment">Заметка <span class="opt">— необязательно</span></label>
+    <textarea class="control pencil" id="f-comment" name="comment">{{ comment }}</textarea>
+    <div class="helper">Пометка от себя: то, чего нет в документе.</div>
+  </div>
+
+  <div class="field">
+    <label>Чья запись</label>
+    {% for member in members %}
+    <label>
+      <input type="radio" name="patient_id" value="{{ member.id }}"
+        {% if member.is_active %}checked{% endif %}>
+      {{ member.first_name }}
+    </label>
+    {% endfor %}
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+</form>
+{% endblock %}

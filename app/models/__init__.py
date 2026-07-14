@@ -6,6 +6,15 @@
 
 from app.models.base import Base
 from app.models.family import Account, Family, FamilyMember
-from app.models.record import HealthRecord, RecordFile
+from app.models.record import PARSE_STATUS_LABELS, HealthRecord, ParseStatus, RecordFile
 
-__all__ = ["Account", "Base", "Family", "FamilyMember", "HealthRecord", "RecordFile"]
+__all__ = [
+    "PARSE_STATUS_LABELS",
+    "Account",
+    "Base",
+    "Family",
+    "FamilyMember",
+    "HealthRecord",
+    "ParseStatus",
+    "RecordFile",
+]

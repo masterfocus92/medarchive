@@ -17,6 +17,29 @@ def initials(first_name: str, last_name: str) -> str:
     return (first_name[:1] + last_name[:1]).upper()
 
 
+def switcher_context(session_data, account: Account, members: list[FamilyMember]) -> dict:
+    """Контекст шапки (переключатель) — общий для всех экранов с members.
+
+    Контракт T2.4-BE/T2.5-FE: members[{id, full_name, first_name,
+    initials, is_active}] + active_member.
+    """
+    active = resolve_active_member(session_data, account, members)
+    return {
+        "members": [
+            {
+                "id": member.id,
+                "full_name": member.full_name,
+                # Подпись под монограммой — имя без фамилии (шапка тесная).
+                "first_name": member.first_name,
+                "initials": initials(member.first_name, member.last_name),
+                "is_active": member.id == active.id,
+            }
+            for member in members
+        ],
+        "active_member": active,
+    }
+
+
 def resolve_active_member(
     session_data, account: Account, members: list[FamilyMember]
 ) -> FamilyMember:

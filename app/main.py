@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import Settings, get_settings
 from app.middleware import AuthRequiredMiddleware
-from app.routes import auth, pages, profiles, system
+from app.routes import auth, pages, profiles, records, system
 
 # Пути привязаны к положению пакета, а не к cwd: uvicorn с --reload
 # и pytest могут запускаться с разными рабочими каталогами.
@@ -31,12 +31,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings if settings is not None else get_settings()
 
     app = FastAPI(title="Семейная медкарта")
+    # Настройки — на app.state: роуты берут их через get_app_settings,
+    # не трогая глобальный get_settings() (тестам не нужен .env).
+    app.state.settings = settings
 
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     app.include_router(system.router)
     app.include_router(pages.router)
     app.include_router(auth.router)
     app.include_router(profiles.router)
+    app.include_router(records.router)
 
     # Порядок важен: последняя добавленная middleware — внешняя.
     # SessionMiddleware должна отработать ДО AuthRequired, иначе

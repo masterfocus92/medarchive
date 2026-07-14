@@ -5,9 +5,16 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
+from app.config import Settings
 from app.db import get_session
 from app.middleware import SESSION_ACCOUNT_KEY
 from app.models import Account
+
+
+def get_app_settings(request: Request) -> Settings:
+    """Настройки собранного приложения (фабрика кладёт их в app.state) —
+    роуты не зовут get_settings() напрямую, тесты живут без .env."""
+    return request.app.state.settings
 
 
 def get_current_account(
