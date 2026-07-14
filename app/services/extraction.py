@@ -44,6 +44,8 @@ class Extractor(Protocol):
 
     files: список (mime, содержимое) в порядке страниц — уже в форматах,
     пригодных провайдеру (конвертация — забота вызывающего/imaging).
+    Второй элемент результата — сырой ответ провайдера для журнала
+    прогонов (артефакт, ADR-013): домен в него не заглядывает.
     """
 
     provider: str  # для extraction_runs.provider
@@ -51,4 +53,20 @@ class Extractor(Protocol):
 
     def extract(
         self, files: list[tuple[str, bytes]], family: list[FamilyMember]
-    ) -> ExtractionResult: ...
+    ) -> tuple[ExtractionResult, dict | None]: ...
+
+
+def build_extractor(settings) -> Extractor:
+    """Фабрика по конфигу (ADR-014). Невключённый провайдер — доменная
+    ошибка: конвейер превратит её в честный parse_failed."""
+    if settings.extractor_provider == "disabled":
+        raise ExtractorNotConfigured("экстрактор отключён (EXTRACTOR_PROVIDER=disabled)")
+    if settings.extractor_provider == "claude":
+        raise ExtractorNotConfigured("родной адаптер Claude ещё не реализован (бэклог)")
+    from app.services.extractor_openai import OpenAICompatibleExtractor
+
+    return OpenAICompatibleExtractor(
+        base_url=settings.extractor_base_url,
+        api_key=settings.extractor_api_key,
+        model=settings.extractor_model,
+    )
