@@ -163,6 +163,29 @@ def _make_record(session) -> HealthRecord:
     return record
 
 
+def test_record_parse_status_defaults_to_uploaded(session):
+    # Дефолт ставит БД (T3.1): код может не знать о статусах вовсе,
+    # запись всё равно рождается в правильном состоянии конвейера.
+    record = _make_record(session)
+    session.flush()
+    session.refresh(record)
+
+    assert record.parse_status == "uploaded"
+
+
+def test_record_parse_status_rejects_unknown_value(session):
+    from sqlalchemy import text
+
+    record = _make_record(session)
+    session.flush()
+
+    with pytest.raises(IntegrityError):
+        session.execute(
+            text("UPDATE health_records SET parse_status = 'weird' WHERE id = :id"),
+            {"id": record.id},
+        )
+
+
 def test_record_created_at_set_by_database(session):
     # Инвариант: дата_создания = момент внесения. Проставляет БД,
     # приложение её не передаёт — подделать «задним числом» нельзя.

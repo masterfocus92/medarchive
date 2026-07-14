@@ -8,18 +8,52 @@
 """
 
 from datetime import date, datetime
+from enum import StrEnum
 
-from sqlalchemy import DateTime, ForeignKey, Text, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.family import Account, FamilyMember
 
 
+class ParseStatus(StrEnum):
+    """Статусы конвейера разбора (flows/record-creation.md §6).
+
+    Все пять заведены на этапе 3, чтобы этап 4 не требовал миграции.
+    В БД хранятся английские значения; русские тексты — PARSE_STATUS_LABELS.
+    """
+
+    UPLOADED = "uploaded"  # файл сохранён, запись существует
+    PARSING = "parsing"  # фон взял в работу (Э4)
+    PARSED = "parsed"  # черновик полей готов (Э4)
+    PARSE_FAILED = "parse_failed"  # AI упал; сохранение не отменяется
+    CONFIRMED = "confirmed"  # человек подтвердил (или запись без файла)
+
+
+# Единственное место русских названий статусов — статус всегда виден в UI
+# текстом (DESIGN.MD §5), формулировки не должны расползаться по шаблонам.
+PARSE_STATUS_LABELS = {
+    ParseStatus.UPLOADED: "загружено",
+    ParseStatus.PARSING: "разбирается",
+    ParseStatus.PARSED: "разобрано",
+    ParseStatus.PARSE_FAILED: "разбор не удался",
+    ParseStatus.CONFIRMED: "подтверждено",
+}
+
+
 class HealthRecord(Base):
     """Структурированный факт о здоровье + опциональный комментарий."""
 
     __tablename__ = "health_records"
+    __table_args__ = (
+        # Статус — системное поле с закрытым набором значений (в отличие
+        # от открытого record_type): опечатка в статусе ломает конвейер.
+        CheckConstraint(
+            "parse_status IN ('uploaded', 'parsing', 'parsed', 'parse_failed', 'confirmed')",
+            name="parse_status_allowed",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     # Автор — FK на учётку, не на члена семьи: инвариант «ребёнок без
@@ -30,6 +64,8 @@ class HealthRecord(Base):
     # Инвариант «дата_создания = момент внесения»: проставляет БД,
     # приложение значение не передаёт — записи задним числом невозможны.
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Статус конвейера разбора; дефолт ставит БД (T3.1).
+    parse_status: Mapped[str] = mapped_column(server_default=ParseStatus.UPLOADED.value)
 
     # Всё ниже — опционально: ничто не блокирует сохранение (главный
     # принцип продукта — минимум трения при вводе).
