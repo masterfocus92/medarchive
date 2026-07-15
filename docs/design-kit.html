@@ -292,6 +292,20 @@
   .action-bar .bar-main .btn { width: 100%; }
   .action-bar .bar-helper { font-size: var(--t-caption); color: var(--pencil); text-align: center; }
 
+  /* [+ Э6.5] Плашка среды — маркер тестового стенда на каждом экране.
+     Красный карандаш: предупреждение, не оформление — данные стенда
+     перезаписываются ночным синком (ADR-015/016). На проде не существует. */
+  .env-banner {
+    position: sticky; top: 0; z-index: 10;
+    text-align: center;
+    font-family: var(--mono); font-size: var(--t-caption);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--red-pen);
+    background: color-mix(in srgb, var(--red-pen) 8%, var(--paper));
+    border-bottom: 1px solid color-mix(in srgb, var(--red-pen) 35%, transparent);
+    padding: var(--s1) var(--s3);
+  }
+
   /* --- Пустой экран --- */
   .empty { text-align: center; padding: var(--s7) var(--s4); border: 1px dashed var(--rule); border-radius: var(--radius); }
   .empty h3 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h3); margin-bottom: var(--s2); }
@@ -598,6 +612,13 @@
       </div>
     </div>
     <p class="note">+ v2, задел этапа 6: подтверждение удаления (правило §5 — удаление всегда обособлено и с подтверждением). До Э6 в продукте не используется; тексты утвердим при нарезке Э6.</p>
+  </section>
+
+  <!-- ПЛАШКА СРЕДЫ (Э6.5) -->
+  <section>
+    <div class="sec-label"><span>Плашка среды — маркер стенда</span><span class="tag new">новое · Э6.5</span></div>
+    <div class="env-banner" style="position:static">Тестовый стенд — данные перезаписываются каждую ночь</div>
+    <p class="note">+ Э6.5: единственный экранный элемент релизного контура (ADR-015). Данные стенда неотличимы от боевых и гибнут при каждом синке prod2stg — среда обязана быть видна на каждом экране. Красный карандаш — предупреждение. На проде и в разработке плашки не существует.</p>
   </section>
 
   <!-- ПУСТОЙ ЭКРАН + ПОДТВЕРЖДЕНИЕ -->

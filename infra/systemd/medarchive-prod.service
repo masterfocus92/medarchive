@@ -1,0 +1,19 @@
+# /etc/systemd/system/medarchive-prod.service
+[Unit]
+Description=Семейная медкарта — prod (mdkarta.online)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=medarchive
+Group=medarchive
+WorkingDirectory=/opt/medarchive/prod
+# --no-sync: зависимости ставит deploy.sh; старт сервиса не лезет в сеть.
+# 127.0.0.1: наружу порт не торчит — только через Caddy (T6.5.2).
+ExecStart=/usr/local/bin/uv run --no-sync uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

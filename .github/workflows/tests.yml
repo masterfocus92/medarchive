@@ -1,0 +1,37 @@
+# Тесты и линт (T6.5.7). Запускается на пушах в рабочие ветки и PR;
+# для stg/main вызывается из деплой-воркфлоу (workflow_call) —
+# без дублирующего прогона.
+name: tests
+
+on:
+  push:
+    branches-ignore: [stg, main]
+  pull_request:
+  workflow_call:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Тот же образ, что в dev (ADR-003) — среды согласованы по версии.
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: medcard
+          POSTGRES_PASSWORD: medcard
+          POSTGRES_DB: medcard
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U medcard"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      # conftest берёт креды из POSTGRES_USER/POSTGRES_PASSWORD (дефолты
+      # medcard/medcard совпадают с сервисом выше) — конфиг не нужен.
+      - run: uv run pytest -q

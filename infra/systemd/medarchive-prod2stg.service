@@ -1,0 +1,8 @@
+# /etc/systemd/system/medarchive-prod2stg.service
+[Unit]
+Description=Медкарта: пересборка стенда из последнего бэкапа (ADR-016)
+After=medarchive-backup.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/medarchive-prod2stg

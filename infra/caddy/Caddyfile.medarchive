@@ -1,0 +1,11 @@
+# Блоки медкарты для существующего Caddyfile (T6.5.2).
+# Добавить в /etc/caddy/Caddyfile (или import'ом), существующие сайты не трогать.
+# Сертификаты Caddy получает и продлевает сам.
+
+mdkarta.online {
+	reverse_proxy 127.0.0.1:8000
+}
+
+stg.mdkarta.online {
+	reverse_proxy 127.0.0.1:8001
+}

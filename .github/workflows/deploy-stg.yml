@@ -1,0 +1,30 @@
+# Деплой стенда (ADR-015): пуш в stg → тесты → deploy.sh stg по SSH.
+# Красные тесты блокируют деплой (needs).
+name: deploy-stg
+
+on:
+  push:
+    branches: [stg]
+
+concurrency:
+  group: deploy-stg
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  deploy:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new "deploy@$HOST" \
+            'sudo /usr/local/bin/medarchive-deploy stg'

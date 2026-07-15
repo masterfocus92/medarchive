@@ -20,7 +20,19 @@ router = APIRouter()
 
 # Каталог шаблонов — от положения пакета, не от cwd (см. app/main.py).
 TEMPLATES_DIR = Path(__file__).resolve().parents[1] / "templates"
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
+
+
+def _env_context(request: Request) -> dict:
+    """Флаг стенда — каждому шаблону (плашка в base.html, T6.5.3).
+
+    Через context processor от request.app, а не через глобали Jinja:
+    templates разделяется всеми приложениями процесса (тесты собирают
+    несколько), глобаль от последнего create_app протекла бы во все.
+    """
+    return {"is_stg": request.app.state.settings.app_env == "stg"}
+
+
+templates = Jinja2Templates(directory=TEMPLATES_DIR, context_processors=[_env_context])
 
 
 @router.get("/", response_class=HTMLResponse)

@@ -111,6 +111,20 @@ body {
    Нижний паддинг — под sticky action-bar: контент не прячется за баром. */
 .wrap { max-width: 780px; margin: 0 auto; padding-bottom: 120px; }
 
+/* Плашка среды (кит, T6.5.3): стенд обязан быть виден на каждом экране —
+   его данные перезаписываются ночным синком (ADR-016). Красный карандаш:
+   это предупреждение, не оформление. */
+.env-banner {
+  position: sticky; top: 0; z-index: 10;
+  text-align: center;
+  font-family: var(--mono); font-size: var(--t-caption);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--red-pen);
+  background: color-mix(in srgb, var(--red-pen) 8%, var(--paper));
+  border-bottom: 1px solid color-mix(in srgb, var(--red-pen) 35%, transparent);
+  padding: var(--s1) var(--s3);
+}
+
 /* Фактура бумаги (кит v2) — только на фоне приложения, не на карточках.
    Слои — токены --tex-*: сырых значений в классах экранов нет. */
 .paper-tex {

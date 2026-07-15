@@ -1,0 +1,10 @@
+# /etc/systemd/system/medarchive-prod2stg.timer
+[Unit]
+Description=Медкарта: prod2stg каждую ночь в 04:00 (после бэкапа)
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

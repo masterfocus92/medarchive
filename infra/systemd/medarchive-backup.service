@@ -1,0 +1,8 @@
+# /etc/systemd/system/medarchive-backup.service
+[Unit]
+Description=Медкарта: ночной бэкап прода в Object Storage (ADR-016)
+
+[Service]
+Type=oneshot
+User=medarchive
+ExecStart=/usr/local/bin/medarchive-backup
