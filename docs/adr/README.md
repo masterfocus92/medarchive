@@ -19,3 +19,6 @@
 | [ADR-012](ADR-012-status-two-axes.md) | Статусная модель записи: конвейер (parse_status) и подтверждение (confirmed_at) — две оси | принято |
 | [ADR-013](ADR-013-extractor-domain-interface.md) | AI-экстрактор: доменный DTO + Protocol, провайдер — адаптер, промпты в адаптере | принято |
 | [ADR-014](ADR-014-llm-via-aggregator.md) | LLM через OpenAI-совместимого посредника (RouterAI); размен приватности принят | принято |
+| [ADR-015](ADR-015-release-contour.md) | Релизный контур: один VPS, изолированные prod/stg, ветки stg/main, деплой одним скриптом, Actions с ручным подтверждением прода | принято |
+| [ADR-016](ADR-016-backups-and-prod2stg.md) | Бэкапы в Yandex Object Storage (rclone crypt, ретенция); стенд восстанавливается из бэкапа — проверка восстановимости и репетиция миграций | принято |
+| [ADR-017](ADR-017-native-postgres-on-vps.md) | На VPS PostgreSQL нативно (PGDG + pgvector), docker остаётся для разработки | принято |
