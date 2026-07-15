@@ -62,5 +62,11 @@
     </ul>
     {% endif %}
   </div>
+  {# Действия (Э6): правка — тихая, удаление — красное и отодвинуто
+     (DESIGN §5), всегда через страницу подтверждения. #}
+  <div class="rec-actions">
+    <a class="btn btn-quiet" href="/records/{{ record.id }}/edit">Редактировать</a>
+    <a class="btn btn-danger" href="/records/{{ record.id }}/delete">Удалить</a>
+  </div>
 </article>
 {% endblock %}

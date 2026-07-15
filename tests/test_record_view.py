@@ -212,6 +212,115 @@ def test_pdf_page_is_plate_not_img(client, db_setup):
     assert f'<img src="/records/{record_id}/files/1"' not in html
 
 
+# ---------- T6.2: режим правки ----------
+
+
+def test_edit_opens_review_screen_without_ai_marks_and_retry(client, db_setup):
+    """Правка подтверждённой — тот же экран проверки, но: без field.ai
+    (запись проверена человеком), без «Разобрать ещё раз» (❓4)."""
+    record_id = _create(client, db_setup, n_files=1)
+    _set(
+        db_setup,
+        record_id,
+        parse_status="parse_failed",  # can_retry истинен — но в правке ретрая нет
+        confirmed_at=datetime.now(UTC),
+        title="Анализ мочи",
+        clinic="Инвитро",
+    )
+
+    response = client.get(f"/records/{record_id}/edit")
+
+    assert response.status_code == 200
+    html = response.text
+    assert f'action="/records/{record_id}/confirm"' in html  # форма проверки
+    assert 'value="Анализ мочи"' in html  # факты предзаполнены
+    assert 'class="field ai"' not in html
+    assert "Разобрать ещё раз" not in html
+
+
+def test_edit_of_unconfirmed_redirects_to_review(client, db_setup):
+    """B5: у неподтверждённой «режим правки» — обычная проверка."""
+    record_id = _create(client, db_setup, n_files=1)
+    _set(db_setup, record_id, parse_status="parsed", confirmed_at=None)
+
+    response = client.get(f"/records/{record_id}/edit")
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/records/{record_id}"
+
+
+def test_edit_foreign_record_is_404(client, db_setup):
+    _, ids = db_setup
+
+    assert client.get(f"/records/{ids['foreign_record']}/edit").status_code == 404
+
+
+def test_confirm_with_return_to_card_updates_and_returns(client, db_setup):
+    """❓3: «Сохранить» из правки ведёт на карточку; confirmed_at
+    не переписывается (ADR-012 — момент первой проверки историчен)."""
+    record_id = _create(client, db_setup, comment="старая заметка")
+    engine, ids = db_setup
+    with Session(engine) as session:
+        first_confirmed = session.get(HealthRecord, record_id).confirmed_at
+
+    response = client.post(
+        f"/records/{record_id}/confirm",
+        data={"patient_id": ids["member"], "title": "Поправили", "return_to": "card"},
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/records/{record_id}"
+    with Session(engine) as session:
+        record = session.get(HealthRecord, record_id)
+        assert record.title == "Поправили"
+        assert record.confirmed_at == first_confirmed
+
+
+def test_confirm_return_to_garbage_falls_back_to_feed(client, db_setup):
+    """Белый список return_to: мусорное значение — не открытый redirect."""
+    record_id = _create(client, db_setup, comment="заметка")
+    _, ids = db_setup
+
+    response = client.post(
+        f"/records/{record_id}/confirm",
+        data={"patient_id": ids["member"], "return_to": "https://evil.example"},
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/"
+
+
+# ---------- T6.3: вёрстка действий ----------
+
+
+def test_card_has_edit_and_delete_actions(client, db_setup):
+    """rec-actions на карточке: правка — тихая, удаление — красное
+    и обособленное (DESIGN §5)."""
+    record_id = _create(client, db_setup, comment="с действиями")
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert 'class="rec-actions"' in html
+    assert f'href="/records/{record_id}/edit"' in html
+    assert f'href="/records/{record_id}/delete"' in html
+    assert "btn-danger" in html
+    assert html.count("btn-primary") == 0  # карточка по-прежнему без primary
+
+
+def test_edit_mode_markup(client, db_setup):
+    """Режим правки: hidden return_to=card, «Отмена» ведёт на карточку,
+    «Удалить» доступно и здесь."""
+    record_id = _create(client, db_setup, n_files=1)
+    _confirm(db_setup, record_id)
+
+    html = client.get(f"/records/{record_id}/edit").text
+
+    assert '<input type="hidden" name="return_to" value="card">' in html
+    assert f'href="/records/{record_id}"' in html  # «Отмена» → карточка
+    assert f'href="/records/{record_id}/delete"' in html
+    assert html.count("btn-primary") == 1  # «Сохранить» — единственная
+
+
 # ---------- T5.4: вёрстка карточки ----------
 
 

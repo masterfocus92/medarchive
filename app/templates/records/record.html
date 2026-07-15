@@ -119,9 +119,22 @@
     </div>
   </div>
 
-  {# Первичное действие — в нижнем баре (кит v2), одна primary на экран. #}
+  {% if edit_mode %}
+  {# ❓3 потока правки: из режима правки «Сохранить» возвращает на карточку.
+     Белый список значений — на сервере. #}
+  <input type="hidden" name="return_to" value="card">
+  {% endif %}
+
+  {# Удаление доступно и с проверки (❓2: мусорный скан замечают здесь),
+     и из правки; обособлено от остальных действий (DESIGN §5). #}
+  <div class="danger-row">
+    <a class="btn btn-danger" href="/records/{{ record.id }}/delete">Удалить</a>
+  </div>
+
+  {# Первичное действие — в нижнем баре (кит v2), одна primary на экран.
+     «Отмена» из правки ведёт на карточку, с первичной проверки — на ленту. #}
   <div class="action-bar">
-    <a class="btn btn-secondary btn-lg" href="/">Отмена</a>
+    <a class="btn btn-secondary btn-lg" href="{% if edit_mode %}/records/{{ record.id }}{% else %}/{% endif %}">Отмена</a>
     <div class="bar-main">
       <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
     </div>

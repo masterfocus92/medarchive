@@ -366,6 +366,18 @@ def test_suggested_patient_banner_is_ai_suggest(client, db_setup):
     assert "AI считает" in html
 
 
+def test_review_screen_offers_delete(client, db_setup):
+    """❓2 потока правки/удаления: мусорный скан замечают на проверке —
+    «Удалить» доступно и там, обособленно."""
+    record_id = _create_with_file(client, db_setup)
+    _set(db_setup, record_id, parse_status="parsed")
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert f'href="/records/{record_id}/delete"' in html
+    assert "btn-danger" in html
+
+
 # ---------- T4.5: дизайн-контракт экрана проверки ----------
 
 

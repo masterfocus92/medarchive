@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Удаление записи — Семейная медкарта{% endblock %}
+
+{% block content %}
+{# Подтверждение удаления (T6.1, скелет — вёрстка «листом» в T6.3).
+   Правило DESIGN §5: удаление всегда с подтверждением. #}
+<div class="sheet-page">
+  <div class="sheet-modal">
+    <h3>Удалить запись?</h3>
+    <p class="record-identity">{{ record.title or "Запись без названия" }} ·
+      <span class="rec-date">{{ (record.event_date or record.created_at).strftime("%d.%m.%Y") }}</span></p>
+    <p>Запись скроется из ленты и поиска.</p>
+    <div class="row">
+      <a class="btn btn-secondary" href="/records/{{ record.id }}">Отмена</a>
+      <form method="post" action="/records/{{ record.id }}/delete">
+        <button type="submit" class="btn btn-danger">Удалить запись</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

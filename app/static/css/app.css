@@ -219,6 +219,10 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 .btn-secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
 .btn-secondary:hover { border-color: var(--pencil); }
 
+/* Кнопка btn-danger (кит) — красный карандаш: только удаление (Э6) */
+.btn-danger { background: transparent; color: var(--red-pen); border-color: color-mix(in srgb, var(--red-pen) 35%, transparent); }
+.btn-danger:hover { background: color-mix(in srgb, var(--red-pen) 8%, transparent); }
+
 /* Тост — подтверждение (кит) */
 .toast {
   display: inline-flex; align-items: center; gap: var(--s2);
@@ -391,6 +395,31 @@ article.record { margin-top: var(--s3); }
 .page-flow .p-foot .n { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); }
 .page-flow .p-foot a[download] { font-size: var(--t-small); color: var(--ink-blue); text-decoration: none; }
 .page-flow .p-foot a[download]:hover { text-decoration: underline; }
+
+/* ---------- Действия над записью (Э6) ---------- */
+
+/* Полоса действий карточки (кит §4.7): удаление отодвинуто вправо —
+   правило DESIGN §5, случайный тап по красному исключается расстоянием */
+.rec-actions { display: flex; gap: var(--s2); padding: var(--s3) var(--s4); border-top: var(--hair); background: color-mix(in srgb, var(--paper) 40%, transparent); }
+.rec-actions .btn-danger { margin-left: auto; }
+
+/* «Удалить» на экране проверки/правки — обособленная строка справа,
+   в стороне от «Сохранить»/«Отмена» (DESIGN §5) */
+.danger-row { display: flex; justify-content: flex-end; margin-top: var(--s5); }
+
+/* Подтверждение удаления — «лист» кита отдельной страницей (❓1 потока:
+   работает без JS; оверлей-вариант — бэклог). Страничный вариант получает
+   полные углы и высоту материала. */
+.sheet-page { max-width: 420px; margin: var(--s6) auto 0; }
+.sheet-modal { background: var(--sheet); border: var(--hair); padding: var(--s5) var(--s4) var(--s6); }
+.sheet-page .sheet-modal { border-radius: var(--radius); box-shadow: var(--lift-md); }
+.sheet-modal h3 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h3); margin-bottom: var(--s2); }
+.sheet-modal p { color: var(--pencil); font-size: var(--t-small); margin-bottom: var(--s4); }
+/* Что именно удаляем — чернилами, не карандашом: человек должен опознать запись */
+.sheet-modal .record-identity { color: var(--ink); font-family: var(--serif); font-weight: 600; font-size: var(--t-body); }
+.sheet-modal .row { display: flex; gap: var(--s3); }
+.sheet-modal .row .btn, .sheet-modal .row form { flex: 1; }
+.sheet-modal .row form .btn { width: 100%; }
 
 /* ---------- Общие примитивы кита v2 (Э5.5) ---------- */
 

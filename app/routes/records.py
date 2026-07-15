@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from app.db import get_session
 from app.models import Account, ParseStatus, RecordFile
 from app.repositories.members import list_by_family
-from app.repositories.records import get_for_family
+from app.repositories.records import get_for_family, soft_delete
 from app.routes.deps import get_app_settings, get_current_account
 from app.routes.pages import templates
 from app.services.pipeline import can_retry, run_extraction
@@ -125,7 +125,9 @@ CONFIRM_TOAST = "Запись сохранена"
 INVALID_DATE_ERROR = "Такой даты нет. Проверьте день и месяц."
 
 
-def _record_context(request: Request, account: Account, db: Session, record) -> dict:
+def _record_context(
+    request: Request, account: Account, db: Session, record, edit_mode: bool = False
+) -> dict:
     members = list_by_family(db, account.member.family_id)
     # Вариант и подпись бейджа + AI-поля — готовыми из services/ui:
     # шаблон только рендерит, решений не принимает.
@@ -145,10 +147,13 @@ def _record_context(request: Request, account: Account, db: Session, record) -> 
                 for f in record.files
             ],
             "suggested_patient": suggested,
-            "can_retry": can_retry(record),
+            # Режим правки — про человека: ретрай конвейера остаётся только
+            # на первичной проверке (❓4 потока правки/удаления).
+            "can_retry": can_retry(record) and not edit_mode,
             # ❓4: страница сама переспрашивает сервер, пока конвейер активен.
             "auto_refresh": record.parse_status
             in (ParseStatus.UPLOADED.value, ParseStatus.PARSING.value),
+            "edit_mode": edit_mode,
             "error": None,
         }
     )
@@ -217,6 +222,28 @@ def record_screen(
     )
 
 
+@router.get("/records/{record_id}/edit", response_class=HTMLResponse)
+def edit_record_screen(
+    record_id: int,
+    request: Request,
+    account: Annotated[Account, Depends(get_current_account)],
+    db: Annotated[Session, Depends(get_session)],
+):
+    """Режим правки (спека §6): тот же экран проверки для подтверждённой
+    записи. У неподтверждённой правка — обычная проверка (B5) → редирект
+    на канонический URL, второго экрана не существует."""
+    record = get_for_family(db, record_id, account.member.family_id)
+    if record is None:
+        raise HTTPException(status_code=404)
+    if record.confirmed_at is None:
+        return RedirectResponse(f"/records/{record_id}", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "records/record.html",
+        _record_context(request, account, db, record, edit_mode=True),
+    )
+
+
 @router.post("/records/{record_id}/confirm")
 def confirm_record(
     record_id: int,
@@ -231,6 +258,7 @@ def confirm_record(
     record_type: Annotated[str, Form()] = "",
     content: Annotated[str, Form()] = "",
     comment: Annotated[str, Form()] = "",
+    return_to: Annotated[str, Form()] = "",
 ):
     record = get_for_family(db, record_id, account.member.family_id)
     if record is None:
@@ -265,6 +293,49 @@ def confirm_record(
     db.commit()
 
     request.session["flash"] = CONFIRM_TOAST
+    # ❓3 потока правки: из режима правки — на карточку (человек хочет видеть
+    # результат), с первичной проверки — на ленту. Белый список значений:
+    # произвольный URL из формы — открытый redirect, не принимаем.
+    if return_to == "card":
+        return RedirectResponse(f"/records/{record_id}", status_code=303)
+    return RedirectResponse("/", status_code=303)
+
+
+DELETE_TOAST = "Запись удалена"
+
+
+@router.get("/records/{record_id}/delete", response_class=HTMLResponse)
+def delete_confirm_screen(
+    record_id: int,
+    request: Request,
+    account: Annotated[Account, Depends(get_current_account)],
+    db: Annotated[Session, Depends(get_session)],
+) -> HTMLResponse:
+    """Страница подтверждения удаления (❓1 потока: страница, не JS-модалка —
+    работает без JS). Доступна и для неподтверждённых записей (B2)."""
+    record = get_for_family(db, record_id, account.member.family_id)
+    if record is None:
+        raise HTTPException(status_code=404)
+    members = list_by_family(db, account.member.family_id)
+    context = switcher_context(request.session, account, members)
+    context["record"] = record
+    return templates.TemplateResponse(request, "records/delete.html", context)
+
+
+@router.post("/records/{record_id}/delete")
+def delete_record(
+    record_id: int,
+    request: Request,
+    account: Annotated[Account, Depends(get_current_account)],
+    db: Annotated[Session, Depends(get_session)],
+) -> RedirectResponse:
+    """Мягкое удаление. Повторный POST (двойной сабмит, устаревшая вкладка)
+    безопасен: get_for_family уже не видит удалённую → 404 (B3)."""
+    record = get_for_family(db, record_id, account.member.family_id)
+    if record is None:
+        raise HTTPException(status_code=404)
+    soft_delete(db, record, account)
+    request.session["flash"] = DELETE_TOAST
     return RedirectResponse("/", status_code=303)
 
 

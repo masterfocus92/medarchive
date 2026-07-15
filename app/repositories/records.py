@@ -61,6 +61,15 @@ def get_for_family(session: Session, record_id: int, family_id: int) -> HealthRe
     )
 
 
+def soft_delete(session: Session, record: HealthRecord, account) -> None:
+    """Мягкое удаление — единственная точка (спека §5): физически ничего
+    не стирается, файлы и extraction_runs не трогаются. Кто удалил —
+    фиксируется: в семье двое операторов, авторство удаления значимо."""
+    record.deleted_at = func.now()
+    record.deleted_by_account_id = account.id
+    session.commit()
+
+
 def list_awaiting_review(session: Session, family_id: int) -> list[HealthRecord]:
     """Записи, ждущие человека: терминальный конвейер, но не подтверждены
     (предикат из ADR-012). Вход на экран проверки до появления ленты (Э5)."""
