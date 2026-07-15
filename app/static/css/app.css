@@ -107,8 +107,17 @@ body {
   padding: var(--s6) var(--s4);
 }
 
-/* Одна колонка, вертикальный поток — никаких сайдбаров в POC (DESIGN.MD §6) */
-.wrap { max-width: 780px; margin: 0 auto; }
+/* Одна колонка, вертикальный поток — никаких сайдбаров в POC (DESIGN.MD §6).
+   Нижний паддинг — под sticky action-bar: контент не прячется за баром. */
+.wrap { max-width: 780px; margin: 0 auto; padding-bottom: 120px; }
+
+/* Фактура бумаги (кит v2) — только на фоне приложения, не на карточках.
+   Слои — токены --tex-*: сырых значений в классах экранов нет. */
+.paper-tex {
+  background-color: var(--paper);
+  background-image: var(--tex-spot), var(--tex-rule);
+  background-attachment: fixed;
+}
 
 /* Фокус видим всегда, синими чернилами; outline не отключать (DESIGN.MD §7) */
 :focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
@@ -126,11 +135,7 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 
 /* Кнопки. Первое использование — btn-primary на входе (T2.3-FE). Из кита
    переносим только использованное: .btn, .btn-primary, .btn-lg (остальные
-   варианты добавятся на своих экранах — DESIGN.MD §4).
-   Hover primary в ките задан сырым hex-оттенком — сырой цвет в CSS экранов
-   запрещён (DESIGN.MD §2, тест-страж), а токена под этот оттенок нет.
-   Продукт touch-first (телефон, ховера нет) — hover сознательно опущен,
-   а не приближён неточным значением. */
+   варианты добавятся на своих экранах — DESIGN.MD §4). */
 .btn {
   font-family: var(--sans); font-size: var(--t-body); font-weight: 500;
   padding: 10px var(--s4); border-radius: var(--radius-sm);
@@ -142,6 +147,10 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 }
 .btn:focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
 .btn-primary { background: var(--ink-strong); color: var(--sheet); }
+.btn-primary:hover { background: var(--ink-strong-hover); }
+/* Disabled — только зеркало инварианта B4 («пустых записей нет»): ставится
+   и снимается JS'ом, без JS кнопка активна — инвариант держит сервер (ADR-011). */
+.btn-primary:disabled, .btn-primary[disabled] { background: var(--pencil-soft); opacity: .6; cursor: not-allowed; }
 .btn-lg { font-size: var(--t-lead); padding: 14px var(--s5); }
 
 /* Поле (label + control + helper/error). Первое использование — вход (T2.3-FE).
@@ -174,6 +183,13 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
   font-family: var(--serif); font-weight: 600; font-size: var(--t-body); color: var(--ink);
 }
 
+/* Персональные акценты (кит v2): класс задаёт --who-accent потомкам —
+   классом, не inline-стилем (страж). Только идентичность активного
+   профиля: переключатель и заголовок ленты, контент не заливают. */
+.accent-1 { --who-accent: var(--accent-1); }
+.accent-2 { --who-accent: var(--accent-2); }
+.accent-3 { --who-accent: var(--accent-3); }
+
 /* Переключатель профилей; .who — настоящая кнопка формы (сброс вида вшит) */
 .switcher { display: flex; gap: var(--s2); align-items: center; }
 /* Ширина фиксированная: колонки разной ширины (длина имени) дают
@@ -181,14 +197,18 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); background: none; border: none; font-family: inherit; width: 76px; }
 /* :not(.mono-badge): монограмма — тоже span, но живёт своим кеглем */
 .switcher .who span:not(.mono-badge) { font-size: var(--t-caption); color: var(--pencil); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.switcher .who[aria-selected="true"] .mono-badge { border-color: var(--ink); border-width: 2px; }
-.switcher .who[aria-selected="true"] span:not(.mono-badge) { color: var(--ink); font-weight: 500; }
+/* Активный профиль — персональным акцентом (кит v2): кольцо + тинт + имя.
+   Fallback на чернила, если акцент не задан (например, экран без шапки). */
+.switcher .who[aria-selected="true"] .mono-badge { border-width: 2px; border-color: var(--who-accent, var(--ink)); color: var(--who-accent, var(--ink)); background: color-mix(in srgb, var(--who-accent, var(--ink)) 12%, var(--sheet)); }
+.switcher .who[aria-selected="true"] span:not(.mono-badge) { color: var(--who-accent, var(--ink)); font-weight: 500; }
 
 /* Выбор пациента на форме записи — та же визуальная семья, что switcher,
-   но состояние через radio:checked (работает без JS) */
+   но состояние через radio:checked (работает без JS). Выбранный —
+   персональным акцентом (правка владельца 15.07.2026): идентичность
+   человека, тот же код, что у активного профиля в шапке. */
 .patient-pick .who input { position: absolute; opacity: 0; pointer-events: none; }
-.patient-pick .who:has(input:checked) .mono-badge { border-color: var(--ink); border-width: 2px; }
-.patient-pick .who:has(input:checked) span:not(.mono-badge) { color: var(--ink); font-weight: 500; }
+.patient-pick .who:has(input:checked) .mono-badge { border-width: 2px; border-color: var(--who-accent, var(--ink)); color: var(--who-accent, var(--ink)); background: color-mix(in srgb, var(--who-accent, var(--ink)) 12%, var(--sheet)); }
+.patient-pick .who:has(input:checked) span:not(.mono-badge) { color: var(--who-accent, var(--ink)); font-weight: 500; }
 .patient-pick .who:has(input:focus-visible) .mono-badge { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
 
 /* Шапка приложения: переключатель + обособленный выход (композиция кита) */
@@ -214,6 +234,25 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 /* Данные вводятся моноширинным — «записано в бланк» (кит §3) */
 .control.data { font-family: var(--mono); }
 
+/* Карандашный ввод — заметка пишется «карандашом», как и выводится
+   (pencil-note). Перенос из кита закрывает долг T4.5. */
+textarea.control.pencil { font-family: var(--serif); font-style: italic; color: var(--pencil); min-height: 76px; resize: vertical; }
+
+/* AI-подстановка (кит v2) — третья категория поверх «факт/пометка»:
+   машинная догадка, которую надо подтвердить. Синий пунктир + подпись. */
+.field.ai .control { border-bottom: 2px dashed var(--ink-blue); }
+.ai-hint { font-family: var(--mono); font-size: var(--t-caption); color: var(--ink-blue); margin-top: var(--s1); }
+
+/* AI-предложение пациента (B7, кит v2): баннер-пояснение синими чернилами.
+   Кнопки «Принять» нет — принятие тапом по монограмме (решение 15.07.2026). */
+.ai-suggest {
+  display: flex; align-items: center; gap: var(--s3);
+  background: color-mix(in srgb, var(--ink-blue) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink-blue) 30%, transparent);
+  border-radius: var(--radius-sm); padding: var(--s2) var(--s3); margin-bottom: var(--s2);
+}
+.ai-suggest .t { font-size: var(--t-small); color: var(--ink-blue); flex: 1; }
+
 /* Чип — тип записи, открытое поле (кит) */
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -235,71 +274,82 @@ h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter
 
 /* ---------- Лента (Э5, T5.2) ---------- */
 
-/* Композиция record (кит §4.7) — «лист записи». Базовые значения — из кита. */
-.record { background: var(--sheet); border: var(--hair); border-radius: var(--radius); overflow: hidden; }
+/* Композиция record (кит §4.7) — «лист записи». Базовые значения — из кита.
+   v2: высота материала — карточка приподнята (--lift-md). */
+.record { background: var(--sheet); border: var(--hair); border-radius: var(--radius); overflow: hidden; box-shadow: var(--lift-md); }
 .record .rec-head {
   display: flex; justify-content: space-between; align-items: baseline;
-  padding: var(--s4); border-bottom: var(--hair);
+  padding: var(--s4); border-bottom: var(--hair); gap: var(--s3);
 }
 .record .rec-title { font-family: var(--serif); font-size: var(--t-h3); font-weight: 600; }
+/* Правая колонка шапки: дата события + маркер «подтверждено» (кит v2) */
+.record .rec-datewrap { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; white-space: nowrap; }
 .rec-meta { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-bottom: var(--s3); }
 
-/* Запись-ссылка: весь элемент ленты ведёт на карточку или проверку */
-a.record { display: block; color: inherit; text-decoration: none; }
-a.record:hover { border-color: var(--pencil); }
+/* Шапка ленты (кит v2): имя активного профиля (наследует его акцент,
+   Э5.5.7) + переключатель сортировки одной строкой */
+.feed-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
+.feed-title { font-family: var(--serif); font-weight: 600; font-size: var(--t-h2); letter-spacing: -0.01em; color: var(--who-accent, var(--ink)); }
+/* Сортировка — служебные mono-ссылки; активная — состояние (aria-current),
+   подчёркнута чернилами, не выглядит переходом */
+.feed-sort { display: flex; gap: var(--s3); }
+.feed-sort a { font-family: var(--mono); font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.08em; color: var(--pencil-soft); border-bottom: 1px solid transparent; text-decoration: none; }
+.feed-sort a[aria-current="true"] { color: var(--ink); border-bottom-color: var(--ink); }
 
-/* Компакт-вариант — элемент ленты: без сниппета содержания (лента
-   отвечает «что и когда», подробности — в карточке) */
-.record.compact { padding: var(--s3) var(--s4); }
-.record.compact .rec-head { padding: 0; border-bottom: none; margin-bottom: var(--s2); gap: var(--s3); }
-.record.compact .rec-title { font-size: var(--t-body); }
-/* В компакте meta — одна строка мелких пометок, не пары «ключ-значение» */
-.record.compact .rec-meta { margin-bottom: 0; align-items: center; gap: var(--s2); font-size: var(--t-small); color: var(--pencil); }
+.feed { display: flex; flex-direction: column; gap: var(--s3); list-style: none; }
 
-/* Статус-бейдж — только у неподтверждённых (ADR-012, ❓2 потока):
-   карандашная служебная пометка, норма не маркируется */
-.status-badge {
-  display: inline-flex; align-items: center;
-  font-family: var(--mono); font-size: var(--t-caption);
-  color: var(--pencil); background: color-mix(in srgb, var(--pencil) 10%, transparent);
-  border-radius: var(--radius-sm); padding: 3px 8px;
-}
-
-.feed { list-style: none; display: grid; gap: var(--s2); }
-.feed-sort { display: flex; gap: var(--s1); margin: var(--s4) 0 var(--s3); }
-/* Активная сортировка — состояние, не переход: чернила, без подчёркивания */
-.btn-quiet[aria-current="true"] { color: var(--ink); font-weight: 500; }
-.btn-quiet[aria-current="true"]:hover { text-decoration: none; }
-
-/* ---------- Экран добавления записи (T3.4, композиция страницы) ---------- */
-
-.file-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
-
-.pages { list-style: none; display: grid; gap: var(--s2); margin: var(--s3) 0; }
-.page {
-  display: flex; align-items: center; gap: var(--s3);
+/* Элемент ленты — компакт-запись rec-lite (кит v2): телефонная плотность,
+   без сниппета содержания. Вся запись — ссылка на карточку или проверку. */
+.rec-lite {
+  display: flex; flex-direction: column; gap: var(--s2); width: 100%;
+  text-align: left; cursor: pointer;
   background: var(--sheet); border: var(--hair); border-radius: var(--radius);
-  padding: var(--s2) var(--s3);
+  padding: var(--s3) var(--s4); font-family: var(--sans);
+  box-shadow: var(--lift-sm); color: inherit;
 }
-.page-thumb {
-  width: 48px; height: 48px; object-fit: cover;
-  border: var(--hair); border-radius: var(--radius-sm);
+a.rec-lite { text-decoration: none; }
+a.rec-lite:hover { border-color: var(--pencil); }
+.rec-lite .lite-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+.rec-lite .lite-title { font-family: var(--serif); font-weight: 600; font-size: var(--t-lead); color: var(--ink); line-height: 1.25; }
+.rec-lite .lite-date { font-family: var(--mono); font-size: var(--t-small); color: var(--pencil); white-space: nowrap; }
+.rec-lite .lite-meta { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+.rec-lite .lite-clinic { font-size: var(--t-small); color: var(--pencil); }
+
+/* ---------- Экран добавления записи (T3.4 → кит v2, Э5.5) ---------- */
+
+/* Входы контента в ряд: кнопки-двери потоков К и Ф */
+.content-entries { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.content-entries .entry { flex: 1; }
+
+/* Превью-список страниц (кит v2): порядок значим, наполняет JS-накопитель
+   record-form.js — серверного staging нет (решение 15.07.2026) */
+.pages { display: flex; flex-wrap: wrap; gap: var(--s2); margin: var(--s3) 0; }
+.page-thumb { position: relative; width: 82px; }
+/* «Лист»-миниатюра: превью кадра ложится фоном, PDF остаётся штриховкой */
+.page-thumb .p-sheet {
+  height: 104px; border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  background-image: repeating-linear-gradient(135deg, var(--rule-soft) 0 7px, var(--sheet) 7px 14px);
+  background-size: cover; background-position: center;
+  display: flex; align-items: flex-end; padding: 6px; overflow: hidden;
 }
-.page-thumb-doc {
-  display: inline-flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil);
-  background: var(--paper);
+.page-thumb .p-sheet span { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil); line-height: 1.2; }
+/* Убрать страницу: красный карандаш в углу «листа» */
+.page-thumb .p-rm {
+  position: absolute; top: -7px; right: -7px; width: 22px; height: 22px;
+  border-radius: 999px; background: var(--sheet); border: 1px solid var(--rule);
+  color: var(--red-pen); cursor: pointer; font-size: 13px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
 }
-.page-name {
-  font-size: var(--t-small); overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap;
+.page-thumb .p-cap { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); text-align: center; margin-top: 3px; }
+/* «＋ ещё страница» — цикл камеры заложен в UI (поток К) */
+.page-add {
+  width: 82px; height: 104px; border: 1px dashed var(--rule); border-radius: var(--radius-sm);
+  background: transparent; color: var(--pencil); cursor: pointer;
+  font-family: var(--sans); font-size: var(--t-caption);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; line-height: 1.15;
 }
-/* Убрать страницу: красный карандаш, обособлен справа, тач-цель паддингами */
-.page-remove {
-  margin-left: auto; background: none; border: none; cursor: pointer;
-  color: var(--red-pen); font-family: var(--sans); font-size: var(--t-body);
-  padding: var(--s3);
-}
+.page-add .plus { font-size: 20px; line-height: 1; }
 
 /* ---------- Карточка записи (Э5, T5.4) ---------- */
 
@@ -314,32 +364,69 @@ article.record { margin-top: var(--s3); }
 .rec-meta .m .v { font-size: var(--t-body); }
 .rec-content { color: var(--ink); font-size: var(--t-body); padding: var(--s3) 0; border-top: var(--rule-soft) 1px dashed; }
 
-/* Карандашная заметка (кит) — первое использование вывода: заметка на карточке */
+/* Карандашная заметка (кит) — первое использование вывода: заметка на карточке.
+   Внутри карточки отделена от содержания воздухом (кит v2). */
 .pencil-note {
   font-family: var(--serif); font-style: italic; color: var(--pencil);
   border-left: 2px solid var(--rule); padding: var(--s1) 0 var(--s1) var(--s3);
   font-size: var(--t-body); line-height: 1.5;
 }
+.record .pencil-note { margin-top: var(--s3); }
 
-/* Страницы карточки — вертикальный поток (❓4): листание = естественный
-   скролл, ноль JS. Расширение блока .pages из T3.4: там — ряды-миниатюры
-   формы, здесь — «листы» на ширину колонки. */
-.pages.flow { gap: var(--s4); }
-.pages.flow li { background: var(--sheet); border: var(--hair); border-radius: var(--radius); padding: var(--s3); }
-.pages.flow img { display: block; width: 100%; height: auto; border: var(--hair); border-radius: var(--radius-sm); }
-.page-caption { display: flex; align-items: center; justify-content: space-between; margin-top: var(--s2); }
+/* Страницы карточки — вертикальный поток внутри rec-body (кит v2): карточка —
+   единый «лист», листание = естественный скролл, ноль JS. Имя page-flow:
+   .pages занято превью-списком формы добавления. */
+.page-flow { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s4); list-style: none; }
+.page-flow img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: var(--radius-sm); display: block; }
 /* Плашка вместо превью: PDF (нативный просмотрщик, ❓6) и пропавший файл (B7) —
    честное состояние текстом, не битая картинка */
-.page-plate {
-  display: flex; align-items: center; justify-content: center;
-  min-height: 120px; font-family: var(--mono); font-size: var(--t-small);
-  color: var(--pencil); background: var(--paper);
-  border: 1px dashed var(--rule); border-radius: var(--radius-sm);
+.page-flow .page-plate {
+  min-height: 120px; border: 1px dashed var(--rule); border-radius: var(--radius-sm);
+  background: var(--sheet); display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: var(--t-small); color: var(--pencil);
   text-decoration: none;
 }
-a.page-plate:hover { border-color: var(--pencil); color: var(--ink); }
+.page-flow a.page-plate:hover { border-color: var(--pencil); color: var(--ink); }
+.page-flow .p-foot { display: flex; justify-content: space-between; align-items: center; margin-top: var(--s1); }
+.page-flow .p-foot .n { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); }
+.page-flow .p-foot a[download] { font-size: var(--t-small); color: var(--ink-blue); text-decoration: none; }
+.page-flow .p-foot a[download]:hover { text-decoration: underline; }
+
+/* ---------- Общие примитивы кита v2 (Э5.5) ---------- */
+
+/* Статус-бейдж — язык состояния записи (кит v2): текстом, без спиннеров.
+   Цвет кодирует, нужен ли человек: карандаш с пульсом — идёт работа,
+   синий — зовёт проверить, красный — ручной ввод, зелёный — подтверждено. */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: var(--t-caption); letter-spacing: 0.02em;
+  border-radius: 999px; padding: 3px 9px; border: 1px solid transparent;
+}
+.badge .dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.badge.pending { color: var(--pencil); border-color: var(--pencil-soft); }
+.badge.pending .dot { background: var(--pencil); animation: pulse 1.2s ease-in-out infinite; }
+.badge.review { color: var(--ink-blue); border-color: color-mix(in srgb, var(--ink-blue) 40%, transparent); }
+.badge.review .dot { background: var(--ink-blue); }
+.badge.failed { color: var(--red-pen); border-color: color-mix(in srgb, var(--red-pen) 40%, transparent); }
+.badge.failed .dot { background: var(--red-pen); }
+.badge.done { color: var(--green-ink); border: none; padding-left: 0; }
+.badge.done .dot { background: var(--green-ink); }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
+/* Нижний бар действия (кит v2) — единственная primary экрана в зоне
+   большого пальца; рядом живут disabled-состояние и helper. */
+.action-bar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; gap: var(--s3); align-items: center;
+  padding: var(--s3) var(--s4) var(--s5); margin: 0 calc(-1 * var(--s4));
+  background: linear-gradient(to top, var(--paper) 62%, transparent);
+}
+.action-bar .bar-main { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.action-bar .bar-main .btn { width: 100%; }
+.action-bar .bar-helper { font-size: var(--t-caption); color: var(--pencil); text-align: center; }
 
 /* ---------- Платформа ---------- */
 
-@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+/* animation тоже глушится: пульс бейджа не должен пережить reduced-motion */
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 @media (max-width: 520px) { body { padding: var(--s4) var(--s3); } }

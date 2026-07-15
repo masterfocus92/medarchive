@@ -27,8 +27,9 @@ logger = logging.getLogger(__name__)
 STALE_AFTER = timedelta(minutes=10)
 
 # Поля записи, которые конвейер имеет право заполнять — только пустые:
-# правки человека не перезаписываются никогда.
-_DRAFT_FIELDS = ("title", "event_date", "clinic", "doctor", "record_type", "content")
+# правки человека не перезаписываются никогда. Публичный: на этот же список
+# смотрит services/ui.ai_fields — код «AI подставил» на экране проверки.
+DRAFT_FIELDS = ("title", "event_date", "clinic", "doctor", "record_type", "content")
 
 
 def can_retry(record: HealthRecord, now: datetime | None = None) -> bool:
@@ -109,7 +110,7 @@ def run_extraction(
 def _apply_draft(record: HealthRecord, result: ExtractionResult) -> None:
     """Черновик ложится только в пустые поля; comment и patient_id —
     территория человека, конвейер их не касается вовсе."""
-    for field in _DRAFT_FIELDS:
+    for field in DRAFT_FIELDS:
         if getattr(record, field) is None:
             setattr(record, field, getattr(result, field))
     # Предложение пациента — отдельная колонка, выбор человека не трогаем (B7).

@@ -200,6 +200,29 @@ def test_form_design_contract(client):
     assert "checked" in html  # активный профиль предвыбран (❓3)
 
 
+def test_patient_pick_wears_personal_accents(client):
+    """Монограммы выбора пациента несут классы персональных акцентов
+    (правка владельца 15.07.2026): выбранный человек подсвечивается
+    своим цветом, как и в переключателе профилей."""
+    html = client.get("/records/new").text
+
+    pick = html[html.index("patient-pick") :]
+    assert 'class="who accent-1"' in pick
+    assert 'class="who accent-2"' in pick
+
+
+def test_form_action_bar_without_server_disabled(client):
+    """Кит v2: «Сохранить» — в нижнем баре. Disabled в исходном HTML НЕТ:
+    его ставит и снимает только JS (зеркало B4) — без JS форма отправляется,
+    инвариант держит сервер (ADR-011, решение 15.07.2026)."""
+    html = client.get("/records/new").text
+
+    assert 'class="action-bar"' in html
+    assert 'class="content-entries"' in html  # входы контента — примитив v2
+    assert "disabled" not in html
+    assert 'class="bar-helper"' in html  # текст B4 покажет JS вместе с disabled
+
+
 def test_index_has_add_record_button_in_both_states(client, db_setup):
     _, ids = db_setup
 
@@ -472,5 +495,5 @@ def test_created_record_appears_on_index_for_active_profile(client, db_setup):
     client.post(f"/profile/{ids['child']}")
     response = client.get("/")
 
-    assert 'class="record compact"' in response.text
+    assert 'class="rec-lite"' in response.text
     assert 'class="empty"' not in response.text

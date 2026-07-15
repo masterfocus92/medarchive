@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros/ui.html" import empty, toast %}
+{% from "macros/ui.html" import badge, empty, toast %}
 
 {% block content %}
 {% if flash %}
@@ -7,34 +7,43 @@
 {% endif %}
 
 {% if records %}
-<a class="btn btn-primary btn-lg" href="/records/new">Добавить запись</a>
-
-{# Переключатель сортировки (❓1 потока просмотра) #}
-<nav class="feed-sort">
-  <a class="btn btn-quiet" href="/" {% if sort == "created" %}aria-current="true"{% endif %}>по внесению</a>
-  <a class="btn btn-quiet" href="/?sort=event" {% if sort == "event" %}aria-current="true"{% endif %}>по событию</a>
-</nav>
+{# Шапка ленты (кит v2): имя активного профиля его акцентом + сортировка (❓1). #}
+<div class="feed-head {{ active_accent }}">
+  <h1 class="feed-title">{{ active_member.first_name }}</h1>
+  <nav class="feed-sort">
+    <a href="/" {% if sort == "created" %}aria-current="true"{% endif %}>по внесению</a>
+    <a href="/?sort=event" {% if sort == "event" %}aria-current="true"{% endif %}>по событию</a>
+  </nav>
+</div>
 
 <ul class="feed">
   {% for r in records %}
   <li>
-    <a class="record compact" href="/records/{{ r.id }}">
-      <div class="rec-head">
-        <span class="rec-title">{{ r.title or "Запись без названия" }}</span>
-        <span class="rec-date">{{ (r.event_date or r.created_at).strftime("%d.%m.%Y") }}</span>
+    <a class="rec-lite" href="/records/{{ r.id }}">
+      <div class="lite-head">
+        <span class="lite-title">{{ r.title or "Запись без названия" }}</span>
+        <span class="lite-date">{{ (r.event_date or r.created_at).strftime("%d.%m.%Y") }}</span>
       </div>
-      <div class="rec-meta">
+      <div class="lite-meta">
         {% if r.record_type %}<span class="chip">{{ r.record_type }}</span>{% endif %}
-        {% if r.clinic %}<span>{{ r.clinic }}</span>{% endif %}
-        {% if r.status_label %}<span class="status-badge">{{ r.status_label }}</span>{% endif %}
+        {% if r.clinic %}<span class="lite-clinic">{{ r.clinic }}</span>{% endif %}
+        {{ badge(r.status_kind, r.status_label) }}
       </div>
     </a>
   </li>
   {% endfor %}
 </ul>
+
+{# Первичное действие — в нижнем баре (кит v2): зона большого пальца. #}
+<div class="action-bar">
+  <div class="bar-main">
+    <a class="btn btn-primary btn-lg" href="/records/new">Добавить запись</a>
+  </div>
+</div>
 {% else %}
 {# Имя — в именительном падеже через тире: русские имена в косвенных
-   падежах («У Анны») без морфологии корректно не просклонять. #}
+   падежах («У Анны») без морфологии корректно не просклонять.
+   Первичное действие — внутри empty; нижний бар пустому экрану не нужен. #}
 {{ empty(
   active_member.first_name ~ " — записей пока нет",
   "Сфотографируйте документ или добавьте заметку — карта начнёт наполняться.",

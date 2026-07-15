@@ -36,14 +36,28 @@ class ParseStatus(StrEnum):
 # Единственное место русских названий статусов — статус всегда виден в UI
 # текстом (DESIGN.MD §5), формулировки не должны расползаться по шаблонам.
 # У NONE подписи нет: несуществующий конвейер в UI не показывается.
+# «разобрано — проверьте» вместо «разобрано» — решение 15.07.2026 (кит v2):
+# подпись зовёт к действию, а не констатирует.
 PARSE_STATUS_LABELS = {
     ParseStatus.UPLOADED: "загружено",
     ParseStatus.PARSING: "разбирается",
-    ParseStatus.PARSED: "разобрано",
+    ParseStatus.PARSED: "разобрано — проверьте",
     ParseStatus.PARSE_FAILED: "разбор не удался",
 }
 
+# Вариант статус-бейджа кита v2: цвет кодирует, нужен ли человек.
+# pending — работа идёт (очередь и разбор; их различают подписи), review —
+# зовёт проверить, failed — ручной ввод. Живёт рядом с подписями: один
+# источник соответствия «статус → как показать».
+PARSE_STATUS_KINDS = {
+    ParseStatus.UPLOADED: "pending",
+    ParseStatus.PARSING: "pending",
+    ParseStatus.PARSED: "review",
+    ParseStatus.PARSE_FAILED: "failed",
+}
+
 CONFIRMED_LABEL = "подтверждено"
+CONFIRMED_KIND = "done"
 
 
 class HealthRecord(Base):

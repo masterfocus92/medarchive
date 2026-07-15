@@ -25,11 +25,13 @@
       accept="image/*" capture="environment">
     <input class="control" type="file" id="picker-input" name="files" multiple
       accept="image/jpeg,image/png,image/webp,image/heic,application/pdf">
-    <div class="file-actions" id="file-actions" hidden>
-      <button type="button" class="btn btn-secondary" id="camera-btn">Сфотографировать</button>
-      <button type="button" class="btn btn-secondary" id="picker-btn">Выбрать из галереи или файл</button>
+    <div class="content-entries" id="file-actions" hidden>
+      <button type="button" class="btn btn-secondary entry" id="camera-btn">Сфотографировать</button>
+      <button type="button" class="btn btn-secondary entry" id="picker-btn">Выбрать из галереи или файл</button>
     </div>
-    <ul class="pages" id="pages"></ul>
+    {# Превью-список (кит v2): наполняет клиентский JS-накопитель —
+       серверного staging нет, файлы уходят одним POST (решение 15.07.2026). #}
+    <div class="pages" id="pages"></div>
     <div class="helper">Можно несколько страниц: фото или PDF, до 20 МБ каждый.</div>
   </div>
 
@@ -44,7 +46,9 @@
     {# Радио без JS: активный профиль предвыбран (❓3), смена — один тап. #}
     <div class="switcher patient-pick">
       {% for member in members %}
-      <label class="who">
+      {# Класс акцента: выбранный пациент подсвечивается своим цветом
+         (идентичность члена семьи, правка владельца 15.07.2026). #}
+      <label class="who {{ member.accent }}">
         <input type="radio" name="patient_id" value="{{ member.id }}"
           {% if member.is_active %}checked{% endif %}>
         <span class="mono-badge">{{ member.initials }}</span>
@@ -54,7 +58,15 @@
     </div>
   </div>
 
-  <button type="submit" class="btn btn-primary btn-lg" id="save-btn">Сохранить</button>
-  <a class="btn btn-quiet" href="/">Отмена</a>
+  {# Первичное действие — в нижнем баре (кит v2). Disabled в исходном HTML
+     нет: его ставит только JS (зеркало B4) — без JS сохранение работает,
+     инвариант держит сервер (ADR-011). #}
+  <div class="action-bar">
+    <a class="btn btn-secondary btn-lg" href="/">Отмена</a>
+    <div class="bar-main">
+      <button type="submit" class="btn btn-primary btn-lg" id="save-btn">Сохранить</button>
+      <span class="bar-helper" id="save-helper" hidden>Добавьте фото или заметку</span>
+    </div>
+  </div>
 </form>
 {% endblock %}

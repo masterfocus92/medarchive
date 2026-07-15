@@ -211,6 +211,35 @@ def test_feed_is_scoped_to_active_profile(client, db_setup):
         assert f'href="/records/{ids[key]}"' not in html
 
 
+def test_feed_title_is_active_profile_name(client, db_setup):
+    """Заголовок ленты — имя активного профиля (кит v2): «на чью карту
+    я смотрю» читается прямо над записями."""
+    _, ids = db_setup
+
+    html = client.get("/").text
+    assert '<h1 class="feed-title">Оператор</h1>' in html
+
+    client.post(f"/profile/{ids['child']}")
+    html = client.get("/").text
+    assert '<h1 class="feed-title">Ребёнок</h1>' in html
+
+
+def test_personal_accents_follow_active_profile(client, db_setup):
+    """Кит v2: активный профиль и заголовок ленты несут класс персонального
+    акцента (по порядку членов семьи); переключение меняет цвет."""
+    _, ids = db_setup
+
+    html = client.get("/").text
+    # Оператор — первый член семьи → accent-1.
+    assert 'class="who accent-1" aria-selected="true"' in html
+    assert 'class="feed-head accent-1"' in html
+
+    client.post(f"/profile/{ids['child']}")
+    html = client.get("/").text
+    assert 'class="who accent-2" aria-selected="true"' in html
+    assert 'class="feed-head accent-2"' in html
+
+
 def test_temporary_blocks_are_gone(client):
     html = client.get("/").text
 

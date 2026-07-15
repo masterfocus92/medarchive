@@ -11,7 +11,9 @@
 <nav class="switcher">
   {% for member in members %}
   <form method="post" action="/profile/{{ member.id }}">
-    <button type="submit" class="who" aria-selected="{{ 'true' if member.is_active else 'false' }}">
+    {# Класс акцента (кит v2) задаёт --who-accent: активный профиль
+       обводится персональным цветом, а не общими чернилами. #}
+    <button type="submit" class="who {{ member.accent }}" aria-selected="{{ 'true' if member.is_active else 'false' }}">
       <span class="mono-badge">{{ member.initials }}</span>
       <span>{{ member.first_name }}</span>
     </button>
@@ -33,6 +35,13 @@
 {# Тост-подтверждение (кит): имя действия сквозное — «Сохранить» → «сохранена». #}
 {% macro toast(text) %}
 <div class="toast"><span class="dot"></span>{{ text }}</div>
+{% endmacro %}
+
+{# Статус-бейдж (кит v2): вариант и подпись приходят готовыми из
+   services/ui (badge_for/feed_badge) — шаблон решений не принимает.
+   Пустой kind → бейджа нет (конвейер none, лента у подтверждённых). #}
+{% macro badge(kind, label) %}
+{%- if kind %}<span class="badge {{ kind }}"><span class="dot"></span>{{ label }}</span>{% endif -%}
 {% endmacro %}
 
 {# Поле ввода = label + control + опциональный helper (примитив кита §4).

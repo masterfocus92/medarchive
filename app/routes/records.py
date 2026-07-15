@@ -19,13 +19,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import (
-    CONFIRMED_LABEL,
-    PARSE_STATUS_LABELS,
-    Account,
-    ParseStatus,
-    RecordFile,
-)
+from app.models import Account, ParseStatus, RecordFile
 from app.repositories.members import list_by_family
 from app.repositories.records import get_for_family
 from app.routes.deps import get_app_settings, get_current_account
@@ -38,6 +32,7 @@ from app.services.records import (
     UnknownPatientError,
     create_record,
 )
+from app.services.ui import ai_fields, badge_for
 
 logger = logging.getLogger(__name__)
 
@@ -132,10 +127,9 @@ INVALID_DATE_ERROR = "Такой даты нет. Проверьте день и
 
 def _record_context(request: Request, account: Account, db: Session, record) -> dict:
     members = list_by_family(db, account.member.family_id)
-    if record.confirmed_at is not None:
-        status_label = CONFIRMED_LABEL
-    else:
-        status_label = PARSE_STATUS_LABELS.get(ParseStatus(record.parse_status))
+    # Вариант и подпись бейджа + AI-поля — готовыми из services/ui:
+    # шаблон только рендерит, решений не принимает.
+    status_kind, status_label = badge_for(record)
     suggested = None
     if record.suggested_patient_id is not None and record.suggested_patient_id != record.patient_id:
         suggested = next((m for m in members if m.id == record.suggested_patient_id), None)
@@ -144,6 +138,8 @@ def _record_context(request: Request, account: Account, db: Session, record) -> 
         {
             "record": record,
             "status_label": status_label,
+            "status_kind": status_kind,
+            "ai_fields": ai_fields(record),
             "record_files": [
                 {"position": f.position, "url": f"/records/{record.id}/files/{f.position}"}
                 for f in record.files
@@ -183,11 +179,15 @@ def _view_context(request: Request, account: Account, db: Session, record) -> di
                 "available": available,
             }
         )
+    # Карточку видят только подтверждённые записи (ветвление роута),
+    # поэтому badge_for здесь всегда отдаёт («done», «подтверждено»).
+    status_kind, status_label = badge_for(record)
     context = switcher_context(request.session, account, members)
     context.update(
         {
             "record": record,
-            "status_label": CONFIRMED_LABEL,
+            "status_label": status_label,
+            "status_kind": status_kind,
             "pages": pages,
             "page_count": len(pages),
         }

@@ -8,7 +8,9 @@ from app.models.base import Base
 from app.models.extraction import ExtractionRun
 from app.models.family import Account, Family, FamilyMember
 from app.models.record import (
+    CONFIRMED_KIND,
     CONFIRMED_LABEL,
+    PARSE_STATUS_KINDS,
     PARSE_STATUS_LABELS,
     HealthRecord,
     ParseStatus,
@@ -16,7 +18,9 @@ from app.models.record import (
 )
 
 __all__ = [
+    "CONFIRMED_KIND",
     "CONFIRMED_LABEL",
+    "PARSE_STATUS_KINDS",
     "PARSE_STATUS_LABELS",
     "Account",
     "Base",

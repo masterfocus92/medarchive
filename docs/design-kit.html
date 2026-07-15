@@ -3,14 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Дизайн-кит — Семейная медкарта</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Дизайн-кит v2 — Семейная медкарта</title>
 <style>
   /* ============================================================
-     ТОКЕНЫ — единственный источник истины.
-     Агент использует только их. Сырых значений в экранах нет.
+     Шрифты — self-hosted (ADR-008): кит открывается без сети,
+     как и продукт. Пути — относительно docs/ до статики продукта.
+     ============================================================ */
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("../app/static/fonts/inter-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("../app/static/fonts/inter-cyrillic-400-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("../app/static/fonts/inter-latin-500-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 500; font-display: swap; src: url("../app/static/fonts/inter-cyrillic-500-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: "Source Serif 4"; font-style: normal; font-weight: 600; font-display: swap; src: url("../app/static/fonts/source-serif-4-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+  @font-face { font-family: "Source Serif 4"; font-style: normal; font-weight: 600; font-display: swap; src: url("../app/static/fonts/source-serif-4-cyrillic-600-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: "Source Serif 4"; font-style: italic; font-weight: 400; font-display: swap; src: url("../app/static/fonts/source-serif-4-latin-400-italic.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+  @font-face { font-family: "Source Serif 4"; font-style: italic; font-weight: 400; font-display: swap; src: url("../app/static/fonts/source-serif-4-cyrillic-400-italic.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+  @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("../app/static/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212; }
+  @font-face { font-family: "JetBrains Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("../app/static/fonts/jetbrains-mono-cyrillic-400-normal.woff2") format("woff2"); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+
+  /* ============================================================
+     ТОКЕНЫ — единственный источник истины. v2 (основной с 15.07.2026).
+     Изменения v2 помечены [+ v2] / [изм. v2].
      ============================================================ */
   :root {
     /* Цвет: бумага / чернила / карандаш */
@@ -23,9 +35,18 @@
     --pencil-soft: #9A948A;  /* бледный карандаш — подписи, плейсхолдеры */
     --rule:        #DAD6CB;  /* линовка — тонкие разделители, рамки */
     --rule-soft:   #E7E3D9;  /* очень бледная линовка */
-    --ink-blue:    #2E4B7A;  /* синие чернила — ссылки, фокус */
+    --ink-blue:    #2E4B7A;  /* синие чернила — фокус, ссылки, «AI подставил» [расш. v2] */
     --red-pen:     #8E3B33;  /* красный карандаш — ошибка, удаление */
-    --green-ink:   #4A6350;  /* зелёные чернила — подтверждение */
+    --green-ink:   #4A6350;  /* зелёные чернила — подтверждение [активнее в v2] */
+
+    /* [+ v2] Персональные акценты профилей — идентичность члена семьи.
+       Имена нейтральные (--accent-1/2/3): имена людей живут в данных
+       (.env.seed, ADR-009), не в токенах. Мэппинг — по порядку членов
+       семьи (стабилен по id), циклично. Общая светлота/насыщенность,
+       тон намеренно уведён от семантических blue/green/red. */
+    --accent-1: oklch(0.5 0.09 220);   /* бирюзовые чернила */
+    --accent-2: oklch(0.5 0.10 320);   /* сливовые чернила */
+    --accent-3: oklch(0.56 0.10 85);   /* охряные чернила */
 
     /* Типографика */
     --serif: "Source Serif 4", Georgia, serif;      /* заголовки, названия записей */
@@ -49,6 +70,16 @@
     --radius:   4px;   /* карточки, поля — крепкие углы, как у бланка */
     --radius-sm: 3px;
     --hair: 1px solid var(--rule);
+
+    /* [+ v2] Высота материала — глубина без новых оттенков.
+       Верхний внутренний блик (лист ловит свет) + мягкая тень. */
+    --lift-sm: 0 1px 0 rgba(255,255,255,.7) inset, 0 6px 14px -10px rgba(30,28,25,.35);
+    --lift-md: 0 1px 0 rgba(255,255,255,.7) inset, 0 10px 26px -16px rgba(30,28,25,.4);
+
+    /* [+ v2] Фактура бумаги — слои фона приложения. Значения-токены:
+       классы экранов собираются только из var(--...) (DESIGN.md §2). */
+    --tex-spot: radial-gradient(circle at 30% 12%, rgba(255,255,255,.5), transparent 60%);
+    --tex-rule: repeating-linear-gradient(0deg, rgba(30,28,25,.014) 0 1px, transparent 1px 3px);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,31 +96,34 @@
 
   .wrap { max-width: 780px; margin: 0 auto; }
 
-  /* ---------- Строительная документация кита ---------- */
-  .kit-head { margin-bottom: var(--s7); border-bottom: 2px solid var(--ink); padding-bottom: var(--s4); }
-  .kit-head h1 {
-    font-family: var(--serif); font-weight: 600; font-size: var(--t-h1);
-    letter-spacing: -0.01em; line-height: 1.1;
-  }
-  .kit-head p {
-    color: var(--pencil); font-size: var(--t-small); margin-top: var(--s2);
-    font-family: var(--mono);
+  /* [+ v2] Фактура бумаги — наносится на фон приложения (не на карточки).
+     Едва заметная линовка + световое пятно; глубина, не текстура «в лоб». */
+  .paper-tex {
+    background-color: var(--paper);
+    background-image: var(--tex-spot), var(--tex-rule);
+    background-attachment: fixed;
   }
 
+  /* [+ v2] Классы персональных акцентов: задают --who-accent потомкам.
+     Продукт вешает их классом (inline-стили в шаблонах запрещены стражем). */
+  .accent-1 { --who-accent: var(--accent-1); }
+  .accent-2 { --who-accent: var(--accent-2); }
+  .accent-3 { --who-accent: var(--accent-3); }
+
+  /* ---------- Строительная документация кита ---------- */
+  .kit-head { margin-bottom: var(--s7); border-bottom: 2px solid var(--ink); padding-bottom: var(--s4); }
+  .kit-head h1 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h1); letter-spacing: -0.01em; line-height: 1.1; }
+  .kit-head p { color: var(--pencil); font-size: var(--t-small); margin-top: var(--s2); font-family: var(--mono); }
+
   section { margin-bottom: var(--s7); }
-  .sec-label {
-    font-family: var(--mono); font-size: var(--t-caption);
-    text-transform: uppercase; letter-spacing: 0.12em;
-    color: var(--pencil-soft);
-    padding-bottom: var(--s2); margin-bottom: var(--s4);
-    border-bottom: var(--hair);
-  }
+  .sec-label { font-family: var(--mono); font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.12em; color: var(--pencil-soft); padding-bottom: var(--s2); margin-bottom: var(--s4); border-bottom: var(--hair); display:flex; justify-content:space-between; align-items:center; gap:var(--s3); }
+  .tag { font-family: var(--mono); font-size: var(--t-caption); letter-spacing: 0.06em; padding: 2px 8px; border-radius: 999px; white-space:nowrap; }
+  .tag.new { color: var(--green-ink); border: 1px solid color-mix(in srgb, var(--green-ink) 40%, transparent); }
+  .tag.chg { color: var(--ink-blue); border: 1px solid color-mix(in srgb, var(--ink-blue) 40%, transparent); }
   .note { color: var(--pencil); font-size: var(--t-small); margin-top: var(--s3); font-style: italic; }
   .row { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: flex-start; }
 
-  /* ============================================================
-     ПАЛИТРА
-     ============================================================ */
+  /* ============================================================ ПАЛИТРА ============================================================ */
   .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s3); }
   .swatch { border: var(--hair); border-radius: var(--radius); overflow: hidden; background: var(--sheet); }
   .swatch .chip { height: 56px; }
@@ -97,9 +131,7 @@
   .swatch .name { font-size: var(--t-small); font-weight: 500; }
   .swatch .hex { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil); }
 
-  /* ============================================================
-     ТИПОГРАФИКА
-     ============================================================ */
+  /* ============================================================ ТИПОГРАФИКА ============================================================ */
   .type-row { padding: var(--s3) 0; border-bottom: var(--hair); display: flex; justify-content: space-between; align-items: baseline; gap: var(--s4); }
   .type-row:last-child { border-bottom: none; }
   .type-tag { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); white-space: nowrap; }
@@ -111,23 +143,17 @@
   .d-small { font-size: var(--t-small); color: var(--pencil); }
   .d-data { font-family: var(--mono); font-size: var(--t-body); }
 
-  /* ============================================================
-     ПРИМИТИВЫ
-     ============================================================ */
+  /* ============================================================ ПРИМИТИВЫ ============================================================ */
 
   /* --- Кнопки --- */
-  .btn {
-    font-family: var(--sans); font-size: var(--t-body); font-weight: 500;
-    padding: 10px var(--s4); border-radius: var(--radius-sm);
-    border: 1px solid transparent; cursor: pointer;
-    line-height: 1; transition: background .12s ease, border-color .12s ease;
-    /* Кнопкой бывает и ссылка (<a class="btn">): inline-элементу паддинги
-       не раздвигают строки — без inline-block box наезжает на соседей. */
-    display: inline-block; text-decoration: none; text-align: center;
-  }
+  .btn { font-family: var(--sans); font-size: var(--t-body); font-weight: 500; padding: 10px var(--s4); border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; line-height: 1; transition: background .12s ease, border-color .12s ease; display: inline-block; text-decoration: none; text-align: center; }
   .btn:focus-visible { outline: 2px solid var(--ink-blue); outline-offset: 2px; }
   .btn-primary { background: var(--ink-strong); color: var(--sheet); }
   .btn-primary:hover { background: var(--ink-strong-hover); }
+  /* [+ v2] Заблокированное первичное действие — только зеркало инварианта
+     «пустых записей нет» (B4). Ставится и снимается JS'ом: без JS кнопка
+     активна, инвариант держит сервер (ADR-011, деградация). */
+  .btn-primary:disabled, .btn-primary[disabled] { background: var(--pencil-soft); opacity: .6; cursor: not-allowed; }
   .btn-secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
   .btn-secondary:hover { border-color: var(--pencil); }
   .btn-quiet { background: transparent; color: var(--ink-blue); padding-left: var(--s2); padding-right: var(--s2); }
@@ -136,78 +162,86 @@
   .btn-danger:hover { background: color-mix(in srgb, var(--red-pen) 8%, transparent); }
   .btn-lg { font-size: var(--t-lead); padding: 14px var(--s5); }
 
-  /* --- Поле (label + control + helper/error) --- */
+  /* --- Поле --- */
   .field { margin-bottom: var(--s4); max-width: 380px; }
   .field label { display: block; font-size: var(--t-small); font-weight: 500; margin-bottom: var(--s2); }
   .field .opt { color: var(--pencil-soft); font-weight: 400; }
-  .control {
-    width: 100%; font-family: var(--sans); font-size: var(--t-body); color: var(--ink);
-    background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-sm);
-    padding: 10px var(--s3);
-  }
+  .control { width: 100%; font-family: var(--sans); font-size: var(--t-body); color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 10px var(--s3); }
   .control::placeholder { color: var(--pencil-soft); }
   .control:focus { outline: none; border-color: var(--ink-blue); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink-blue) 18%, transparent); }
   .helper { font-size: var(--t-caption); color: var(--pencil); margin-top: var(--s1); }
   .field.error .control { border-color: var(--red-pen); }
   .field.error .helper { color: var(--red-pen); }
-
-  /* Данные вводятся моноширинным — «записано в бланк» */
   .control.data { font-family: var(--mono); }
 
-  /* --- Карандашная заметка (комментарий-аннотация) --- */
-  .pencil-note {
-    font-family: var(--serif); font-style: italic; color: var(--pencil);
-    border-left: 2px solid var(--rule); padding: var(--s1) 0 var(--s1) var(--s3);
-    font-size: var(--t-body); line-height: 1.5;
-  }
+  /* [+ v2] AI-подстановка — третья категория поверх «факт/пометка»:
+     машинная догадка, которую надо подтвердить. Синий пунктир снизу + подпись. */
+  .field.ai .control { border-bottom: 2px dashed var(--ink-blue); }
+  .ai-hint { font-family: var(--mono); font-size: var(--t-caption); color: var(--ink-blue); margin-top: var(--s1); }
+
+  /* [+ v2] AI-предложение пациента (B7 потока создания): подсвеченный
+     баннер-пояснение. Кнопки «Принять» нет — принятие остаётся тапом по
+     пунктирной монограмме (решение владельца 15.07.2026): один паттерн
+     выбора пациента на всех экранах, и вторая primary не появляется. */
+  .ai-suggest { display: flex; align-items: center; gap: var(--s3); background: color-mix(in srgb, var(--ink-blue) 6%, transparent); border: 1px solid color-mix(in srgb, var(--ink-blue) 30%, transparent); border-radius: var(--radius-sm); padding: var(--s2) var(--s3); margin-bottom: var(--s2); }
+  .ai-suggest .t { font-size: var(--t-small); color: var(--ink-blue); flex: 1; }
+
+  /* --- Карандашная заметка --- */
+  .pencil-note { font-family: var(--serif); font-style: italic; color: var(--pencil); border-left: 2px solid var(--rule); padding: var(--s1) 0 var(--s1) var(--s3); font-size: var(--t-body); line-height: 1.5; }
   textarea.control.pencil { font-family: var(--serif); font-style: italic; color: var(--pencil); min-height: 76px; resize: vertical; }
 
-  /* --- Чип (тип записи — открытое поле) --- */
-  .chip {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--mono); font-size: var(--t-caption); letter-spacing: 0.02em;
-    color: var(--pencil); background: transparent;
-    border: 1px solid var(--rule); border-radius: 999px;
-    padding: 4px 10px; cursor: pointer;
-  }
+  /* --- Чип --- */
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--t-caption); letter-spacing: 0.02em; color: var(--pencil); background: transparent; border: 1px solid var(--rule); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
   .chip:hover { border-color: var(--pencil); }
   .chip[aria-selected="true"] { color: var(--sheet); background: var(--ink); border-color: var(--ink); }
 
-  /* --- Монограмма члена семьи (без картинок — инициалы) --- */
-  .mono-badge {
-    width: 40px; height: 40px; border-radius: 999px;
-    border: 1px solid var(--rule); background: var(--sheet);
-    display: inline-flex; align-items: center; justify-content: center;
-    font-family: var(--serif); font-weight: 600; font-size: var(--t-body); color: var(--ink);
-  }
-  .switcher { display: flex; gap: var(--s2); align-items: center; }
-  /* .who — настоящая <button> (переключение — обычная форма, без JS):
-     сброс дефолтного вида кнопки входит в примитив. */
-  /* Ширина фиксированная: иначе колонки разной ширины (длина имени)
-     дают неравные визуальные интервалы между монограммами. */
-  .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); background: none; border: none; font-family: inherit; width: 76px; }
-  /* :not(.mono-badge): монограмма внутри кнопки — тоже span, но живёт
-     своим кеглем; правило подписи не должно её ужимать. */
-  .switcher .who span:not(.mono-badge) { font-size: var(--t-caption); color: var(--pencil); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .switcher .who[aria-selected="true"] .mono-badge { border-color: var(--ink); border-width: 2px; }
-  .switcher .who[aria-selected="true"] span:not(.mono-badge) { color: var(--ink); font-weight: 500; }
+  /* [+ v2] Статус-бейдж записи — язык состояния разбора и подтверждения.
+     Текстом, без спиннеров. Цвет кодирует, нужен ли человек. */
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: var(--t-caption); letter-spacing: 0.02em; border-radius: 999px; padding: 3px 9px; border: 1px solid transparent; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+  .badge.pending { color: var(--pencil); border-color: var(--pencil-soft); }          /* загружено / разбирается — идёт работа */
+  .badge.pending .dot { background: var(--pencil); animation: pulse 1.2s ease-in-out infinite; }
+  .badge.review { color: var(--ink-blue); border-color: color-mix(in srgb, var(--ink-blue) 40%, transparent); } /* разобрано — зовёт проверить */
+  .badge.review .dot { background: var(--ink-blue); }
+  .badge.failed { color: var(--red-pen); border-color: color-mix(in srgb, var(--red-pen) 40%, transparent); }   /* разбор не удался — ручной ввод */
+  .badge.failed .dot { background: var(--red-pen); }
+  .badge.done { color: var(--green-ink); border: none; padding-left: 0; }              /* подтверждено — зелёные чернила */
+  .badge.done .dot { background: var(--green-ink); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 
-  /* --- Шапка приложения (композиция: переключатель + обособленный выход) --- */
+  /* --- Монограмма --- */
+  .mono-badge { width: 40px; height: 40px; border-radius: 999px; border: 1px solid var(--rule); background: var(--sheet); display: inline-flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 600; font-size: var(--t-body); color: var(--ink); }
+  .switcher { display: flex; gap: var(--s2); align-items: center; }
+  .switcher .who { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: var(--s2); border-radius: var(--radius); background: none; border: none; font-family: inherit; width: 76px; }
+  .switcher .who span:not(.mono-badge) { font-size: var(--t-caption); color: var(--pencil); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* [изм. v2] Активный профиль подсвечивается ПЕРСОНАЛЬНЫМ акцентом
+     (класс .accent-N задаёт --who-accent), а не общими чернилами. */
+  .switcher .who[aria-selected="true"] .mono-badge { border-width: 2px; border-color: var(--who-accent, var(--ink)); color: var(--who-accent, var(--ink)); background: color-mix(in srgb, var(--who-accent, var(--ink)) 12%, var(--sheet)); }
+  .switcher .who[aria-selected="true"] span:not(.mono-badge) { color: var(--who-accent, var(--ink)); font-weight: 500; }
+
+  /* --- Шапка приложения --- */
   .app-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s6); }
-  /* Последний элемент (выход; в приложении — форма с кнопкой) обособлен
-     справа: это не действие из ряда выбора профиля. */
   .app-head > :last-child { margin-left: auto; }
 
-  /* --- Карточка / лист --- */
-  .card { background: var(--sheet); border: var(--hair); border-radius: var(--radius); padding: var(--s4); }
+  /* [+ v2, продукт Э5] Шапка ленты: заголовок — имя активного профиля
+     (наследует его акцент) + переключатель сортировки одной строкой. */
+  .feed-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s3); }
+  .feed-title { font-family: var(--serif); font-weight: 600; font-size: var(--t-h2); letter-spacing: -0.01em; color: var(--who-accent, var(--ink)); }
+  /* Сортировка — служебные mono-ссылки; активная — состояние (aria-current),
+     подчёркнута чернилами, не выглядит переходом. */
+  .feed-sort { display: flex; gap: var(--s3); }
+  .feed-sort a { font-family: var(--mono); font-size: var(--t-caption); text-transform: uppercase; letter-spacing: 0.08em; color: var(--pencil-soft); border-bottom: 1px solid transparent; text-decoration: none; }
+  .feed-sort a[aria-current="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+  .feed { display: flex; flex-direction: column; gap: var(--s3); list-style: none; }
 
-  /* --- Запись (композиция примитивов — signature) --- */
-  .record { background: var(--sheet); border: var(--hair); border-radius: var(--radius); overflow: hidden; }
-  .record .rec-head {
-    display: flex; justify-content: space-between; align-items: baseline;
-    padding: var(--s4); border-bottom: var(--hair);
-  }
+  /* --- Карточка / лист --- [изм. v2: высота материала] --- */
+  .card { background: var(--sheet); border: var(--hair); border-radius: var(--radius); padding: var(--s4); box-shadow: var(--lift-sm); }
+
+  /* --- Запись --- [изм. v2: высота материала + маркер «подтверждено»] --- */
+  .record { background: var(--sheet); border: var(--hair); border-radius: var(--radius); overflow: hidden; box-shadow: var(--lift-md); }
+  .record .rec-head { display: flex; justify-content: space-between; align-items: baseline; padding: var(--s4); border-bottom: var(--hair); gap: var(--s3); }
   .record .rec-title { font-family: var(--serif); font-size: var(--t-h3); font-weight: 600; }
+  .record .rec-datewrap { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; white-space: nowrap; }
   .record .rec-date { font-family: var(--mono); font-size: var(--t-small); color: var(--pencil); }
   .record .rec-body { padding: var(--s4); }
   .rec-meta { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-bottom: var(--s3); }
@@ -217,69 +251,88 @@
   .rec-content { color: var(--ink); font-size: var(--t-body); padding: var(--s3) 0; border-top: var(--rule-soft) 1px dashed; }
   .rec-actions { display: flex; gap: var(--s2); padding: var(--s3) var(--s4); border-top: var(--hair); background: color-mix(in srgb, var(--paper) 40%, transparent); }
 
-  /* --- Запись, компакт-вариант — элемент ленты (Э5) --- */
-  /* Вся запись — одна ссылка; сниппета содержания нет сознательно:
-     лента отвечает «что и когда», подробности — в карточке. */
-  a.record { display: block; color: inherit; text-decoration: none; }
-  a.record:hover { border-color: var(--pencil); }
-  .record.compact { padding: var(--s3) var(--s4); }
-  .record.compact .rec-head { padding: 0; border-bottom: none; margin-bottom: var(--s2); gap: var(--s3); }
-  .record.compact .rec-title { font-size: var(--t-body); }
-  /* В компакте meta — одна строка мелких пометок, не пары «ключ-значение» */
-  .record.compact .rec-meta { margin-bottom: 0; align-items: center; gap: var(--s2); font-size: var(--t-small); color: var(--pencil); }
+  /* [+ v2, продукт Э5] Страницы записи на карточке — вертикальный поток
+     внутри rec-body (карточка — единый «лист»). Листание = скролл, ноль JS.
+     Имя page-flow: .pages занято превью-списком формы добавления. */
+  .page-flow { display: flex; flex-direction: column; gap: var(--s3); margin-top: var(--s4); list-style: none; }
+  .page-flow img { width: 100%; border: 1px solid var(--rule); border-radius: var(--radius-sm); display: block; }
+  /* Плашка вместо превью: PDF (нативный просмотрщик, без серверного рендера)
+     и пропавший с диска файл (B7) — честное состояние текстом, не битая картинка. */
+  .page-flow .page-plate { min-height: 120px; border: 1px dashed var(--rule); border-radius: var(--radius-sm); background: var(--sheet); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: var(--t-small); color: var(--pencil); text-decoration: none; }
+  .page-flow a.page-plate:hover { border-color: var(--pencil); color: var(--ink); }
+  .page-flow .p-foot { display: flex; justify-content: space-between; align-items: center; margin-top: var(--s1); }
+  .page-flow .p-foot .n { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); }
 
-  /* --- Статус-бейдж — состояние неподтверждённой записи в списке --- */
-  /* Карандашная служебная пометка (статус — не содержание). Подтверждённой
-     записи бейдж не положен: норма не маркируется, маркируется отклонение. */
-  .status-badge {
-    display: inline-flex; align-items: center;
-    font-family: var(--mono); font-size: var(--t-caption);
-    color: var(--pencil); background: color-mix(in srgb, var(--pencil) 10%, transparent);
-    border-radius: var(--radius-sm); padding: 3px 8px;
-  }
+  /* [+ v2] Элемент ленты — компактная запись (телефонная плотность).
+     В продукте — ссылка: вся запись ведёт на карточку или проверку. */
+  .rec-lite { display: flex; flex-direction: column; gap: var(--s2); width: 100%; text-align: left; cursor: pointer; background: var(--sheet); border: var(--hair); border-radius: var(--radius); padding: var(--s3) var(--s4); font-family: var(--sans); box-shadow: var(--lift-sm); color: inherit; }
+  a.rec-lite { display: flex; text-decoration: none; }
+  a.rec-lite:hover { border-color: var(--pencil); }
+  .rec-lite .lite-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3); }
+  .rec-lite .lite-title { font-family: var(--serif); font-weight: 600; font-size: var(--t-lead); color: var(--ink); line-height: 1.25; }
+  .rec-lite .lite-date { font-family: var(--mono); font-size: var(--t-small); color: var(--pencil); white-space: nowrap; }
+  .rec-lite .lite-meta { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; }
+  .rec-lite .lite-clinic { font-size: var(--t-small); color: var(--pencil); }
 
-  /* --- Лента — список компакт-записей + переключатель сортировки --- */
-  .feed { list-style: none; display: grid; gap: var(--s2); padding: 0; }
-  .feed-sort { display: flex; gap: var(--s1); margin: var(--s4) 0 var(--s3); }
-  /* Активная сортировка — состояние, не переход: чернила, без подчёркивания */
-  .btn-quiet[aria-current="true"] { color: var(--ink); font-weight: 500; }
-  .btn-quiet[aria-current="true"]:hover { text-decoration: none; }
+  /* [+ v2] Превью-список страниц — упорядоченная коллекция (камера-первый ввод).
+     Наполняется клиентским JS-накопителем (record-form.js): серверного
+     staging нет, файлы впервые уходят одним POST /records (решение 15.07.2026). */
+  .pages { display: flex; flex-wrap: wrap; gap: var(--s2); }
+  .page-thumb { position: relative; width: 82px; }
+  .page-thumb .p-sheet { height: 104px; border: 1px solid var(--rule); border-radius: var(--radius-sm); background-image: repeating-linear-gradient(135deg, var(--rule-soft) 0 7px, var(--sheet) 7px 14px); background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 6px; overflow: hidden; }
+  .page-thumb .p-sheet span { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil); line-height: 1.2; }
+  .page-thumb .p-rm { position: absolute; top: -7px; right: -7px; width: 22px; height: 22px; border-radius: 999px; background: var(--sheet); border: 1px solid var(--rule); color: var(--red-pen); cursor: pointer; font-size: 13px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .page-thumb .p-cap { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); text-align: center; margin-top: 3px; }
+  .page-add { width: 82px; height: 104px; border: 1px dashed var(--rule); border-radius: var(--radius-sm); background: transparent; color: var(--pencil); cursor: pointer; font-family: var(--sans); font-size: var(--t-caption); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; line-height: 1.15; }
+  .page-add .plus { font-size: 20px; line-height: 1; }
 
-  /* --- Пустой экран — приглашение к действию --- */
+  /* [+ v2] Нижний бар действия — первичное действие в зоне большого пальца. */
+  .action-bar { position: sticky; bottom: 0; z-index: 5; display: flex; gap: var(--s3); align-items: center; padding: var(--s3) var(--s4) var(--s5); margin: 0 calc(-1 * var(--s4)); background: linear-gradient(to top, var(--paper) 62%, transparent); }
+  .action-bar .bar-main { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .action-bar .bar-main .btn { width: 100%; }
+  .action-bar .bar-helper { font-size: var(--t-caption); color: var(--pencil); text-align: center; }
+
+  /* --- Пустой экран --- */
   .empty { text-align: center; padding: var(--s7) var(--s4); border: 1px dashed var(--rule); border-radius: var(--radius); }
   .empty h3 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h3); margin-bottom: var(--s2); }
   .empty p { color: var(--pencil); max-width: 320px; margin: 0 auto var(--s4); font-size: var(--t-small); }
 
-  /* --- Подтверждение (toast) --- */
-  .toast {
-    display: inline-flex; align-items: center; gap: var(--s2);
-    background: var(--ink); color: var(--sheet); font-size: var(--t-small);
-    padding: 10px var(--s4); border-radius: var(--radius-sm);
-  }
+  /* --- Тост --- */
+  .toast { display: inline-flex; align-items: center; gap: var(--s2); background: var(--ink); color: var(--sheet); font-size: var(--t-small); padding: 10px var(--s4); border-radius: var(--radius-sm); }
   .toast .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--green-ink); }
 
-  /* --- Шаги потока (реальная последовательность → нумерация оправдана) --- */
+  /* [+ v2, задел Э6] Модалка подтверждения — «лист» снизу экрана.
+     Единственное применение — подтверждение удаления (правило §5:
+     удаление всегда с подтверждением). До этапа 6 в продукте не используется. */
+  .sheet-overlay { position: fixed; inset: 0; z-index: 20; background: color-mix(in srgb, var(--ink) 45%, transparent); display: flex; align-items: flex-end; }
+  .sheet-modal { width: 100%; max-width: 780px; margin: 0 auto; background: var(--sheet); border-top-left-radius: var(--radius); border-top-right-radius: var(--radius); padding: var(--s5) var(--s4) var(--s6); }
+  .sheet-modal h3 { font-family: var(--serif); font-weight: 600; font-size: var(--t-h3); margin-bottom: var(--s2); }
+  .sheet-modal p { color: var(--pencil); font-size: var(--t-small); margin-bottom: var(--s4); }
+  .sheet-modal .row { display: flex; gap: var(--s3); }
+  .sheet-modal .row .btn { flex: 1; }
+
+  /* --- Шаги --- */
   .steps { display: flex; gap: var(--s4); flex-wrap: wrap; }
   .step { flex: 1; min-width: 160px; }
   .step .n { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); border-bottom: 1px solid var(--rule); padding-bottom: var(--s1); margin-bottom: var(--s2); }
   .step .t { font-family: var(--serif); font-size: var(--t-lead); font-weight: 600; margin-bottom: var(--s1); }
   .step .d { font-size: var(--t-small); color: var(--pencil); }
 
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
   @media (max-width: 520px) { body { padding: var(--s4) var(--s3); } }
 </style>
 </head>
-<body>
+<body class="paper-tex">
 <div class="wrap">
 
   <div class="kit-head">
-    <h1>Семейная медкарта — дизайн-кит</h1>
-    <p>POC · бумага · чернила · карандаш · чернила = факты, карандаш = пометки, красный = правка</p>
+    <h1>Семейная медкарта — дизайн-кит <span style="font-family:var(--mono); font-size:var(--t-h3); color:var(--pencil-soft);">v2</span></h1>
+    <p>POC · бумага · чернила · карандаш · + материал (высота, фактура) · + персональные акценты · + язык статуса · основной с 15.07.2026 · шрифты self-hosted (ADR-008)</p>
   </div>
 
   <!-- ПАЛИТРА -->
   <section>
-    <div class="sec-label">Палитра</div>
+    <div class="sec-label"><span>Палитра</span><span class="tag chg">изм.</span></div>
     <div class="swatches">
       <div class="swatch"><div class="chip" style="background:#F4F2EC"></div><div class="meta"><div class="name">Бумага (фон)</div><div class="hex">#F4F2EC</div></div></div>
       <div class="swatch"><div class="chip" style="background:#FCFBF8"></div><div class="meta"><div class="name">Лист (карточка)</div><div class="hex">#FCFBF8</div></div></div>
@@ -287,15 +340,26 @@
       <div class="swatch"><div class="chip" style="background:#262B33"></div><div class="meta"><div class="name">Тёмные чернила (действие)</div><div class="hex">#262B33</div></div></div>
       <div class="swatch"><div class="chip" style="background:#6B665D"></div><div class="meta"><div class="name">Карандаш (пометки)</div><div class="hex">#6B665D</div></div></div>
       <div class="swatch"><div class="chip" style="background:#DAD6CB"></div><div class="meta"><div class="name">Линовка (рамки)</div><div class="hex">#DAD6CB</div></div></div>
-      <div class="swatch"><div class="chip" style="background:#2E4B7A"></div><div class="meta"><div class="name">Синие чернила (фокус)</div><div class="hex">#2E4B7A</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#2E4B7A"></div><div class="meta"><div class="name">Синие чернила (фокус, AI)</div><div class="hex">#2E4B7A</div></div></div>
       <div class="swatch"><div class="chip" style="background:#8E3B33"></div><div class="meta"><div class="name">Красный карандаш (ошибка)</div><div class="hex">#8E3B33</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#4A6350"></div><div class="meta"><div class="name">Зелёные чернила (подтверждено)</div><div class="hex">#4A6350</div></div></div>
     </div>
-    <p class="note">Акцент — синие чернила, используется только для фокуса и ссылок. Красный — только ошибка и удаление. Никаких других цветов в системе нет.</p>
+    <p class="note">Семантические цвета — как в v1: синий = фокус/ссылки/AI, красный = ошибка/удаление, зелёный = подтверждение. Новых семантических цветов нет.</p>
+
+    <div style="margin-top:var(--s5);">
+      <div style="font-family:var(--mono); font-size:var(--t-caption); text-transform:uppercase; letter-spacing:0.1em; color:var(--pencil-soft); margin-bottom:var(--s3);">+ v2 · Персональные акценты профилей</div>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:oklch(0.5 0.09 220)"></div><div class="meta"><div class="name">--accent-1 (бирюза)</div><div class="hex">oklch(.5 .09 220)</div></div></div>
+        <div class="swatch"><div class="chip" style="background:oklch(0.5 0.10 320)"></div><div class="meta"><div class="name">--accent-2 (слива)</div><div class="hex">oklch(.5 .10 320)</div></div></div>
+        <div class="swatch"><div class="chip" style="background:oklch(0.56 0.10 85)"></div><div class="meta"><div class="name">--accent-3 (охра)</div><div class="hex">oklch(.56 .10 85)</div></div></div>
+      </div>
+      <p class="note">Идентичность члена семьи, а не смысл. Имена токенов нейтральные: имена людей — в данных, не в CSS (ADR-009). Назначение — по порядку членов семьи (стабилен по id), циклично. Применяются только к идентичности человека: активный профиль (монограмма, имя, заголовок ленты) и выбранный пациент на формах (правка 15.07.2026) — контент не заливают.</p>
+    </div>
   </section>
 
   <!-- ТИПОГРАФИКА -->
   <section>
-    <div class="sec-label">Типографика</div>
+    <div class="sec-label"><span>Типографика</span></div>
     <div class="type-row"><div class="d-h1">Медкарта семьи</div><div class="type-tag">Serif 34 / 600</div></div>
     <div class="type-row"><div class="d-h2">Приём у кардиолога</div><div class="type-tag">Serif 26 / 600</div></div>
     <div class="type-row"><div class="d-h3">Общий анализ крови</div><div class="type-tag">Serif 20 / 600</div></div>
@@ -303,12 +367,24 @@
     <div class="type-row"><div class="d-body">Основной текст интерфейса и содержания документа</div><div class="type-tag">Sans 15</div></div>
     <div class="type-row"><div class="d-small">Второстепенная подпись</div><div class="type-tag">Sans 13</div></div>
     <div class="type-row"><div class="d-data">12.03.2026 · 5400 г · 58 см</div><div class="type-tag">Mono — данные</div></div>
-    <p class="note">Serif — заголовки и названия записей. Sans — интерфейс и формы (максимальная читаемость). Mono — даты и измерения, читаются как «записано в бланк».</p>
+    <p class="note">Без изменений. Serif — заголовки. Sans — интерфейс. Mono — даты и измерения.</p>
+  </section>
+
+  <!-- МАТЕРИАЛ -->
+  <section>
+    <div class="sec-label"><span>Материал — высота и фактура</span><span class="tag new">новое</span></div>
+    <div class="row">
+      <div style="flex:1; min-width:220px;">
+        <div class="card">Карточка приподнята мягкой тенью (<code style="font-family:var(--mono); font-size:var(--t-caption)">--lift-sm</code>) + верхний блик.</div>
+      </div>
+      <div class="paper-tex" style="flex:1; min-width:220px; border:var(--hair); border-radius:var(--radius); padding:var(--s4);">Фон приложения — фактура бумаги (<code style="font-family:var(--mono); font-size:var(--t-caption)">.paper-tex</code>): едва заметная линовка и световое пятно. Слои — токены <code style="font-family:var(--mono); font-size:var(--t-caption)">--tex-spot / --tex-rule</code>.</div>
+    </div>
+    <p class="note">Глубина добавляется материалом, а не новыми оттенками: тени (<code style="font-family:var(--mono); font-size:var(--t-caption)">--lift-sm/--lift-md</code>) и фактура фона. Тени — только на поднятых поверхностях (карточка, запись, элемент ленты), не на плоских элементах.</p>
   </section>
 
   <!-- КНОПКИ -->
   <section>
-    <div class="sec-label">Кнопки</div>
+    <div class="sec-label"><span>Кнопки</span><span class="tag chg">изм.</span></div>
     <div class="row">
       <button class="btn btn-primary">Сохранить</button>
       <button class="btn btn-secondary">Отмена</button>
@@ -317,34 +393,46 @@
     </div>
     <div class="row" style="margin-top:var(--s4)">
       <button class="btn btn-primary btn-lg">Добавить запись</button>
+      <button class="btn btn-primary btn-lg" disabled>Сохранить</button>
     </div>
-    <p class="note">Первичное действие — тёмные чернила, одно на экран. Удаление — красным, всегда обособлено. Название действия сохраняется через весь флоу: «Сохранить» → «Сохранено».</p>
+    <p class="note">+ v2: заблокированное состояние первичной кнопки (<code style="font-family:var(--mono); font-size:var(--t-caption)">disabled</code>) — гаснет до серого карандаша. Только для инварианта «пустых записей нет» (B4); ставится и снимается JS'ом — без JS кнопка активна, инвариант держит сервер (ADR-011).</p>
   </section>
 
-  <!-- ПОЛЯ -->
+  <!-- ПОЛЯ + AI-ПОДСТАНОВКА -->
   <section>
-    <div class="sec-label">Поля ввода</div>
-    <div class="field">
-      <label>Название документа <span class="opt">— необязательно</span></label>
-      <input class="control" type="text" placeholder="Например, Выписка из стационара">
-      <div class="helper">AI подставит из документа. Можно оставить пустым.</div>
+    <div class="sec-label"><span>Поля ввода + AI-подстановка</span><span class="tag new">новое</span></div>
+    <div class="field ai">
+      <label>Название документа</label>
+      <input class="control" type="text" value="Результат УЗИ">
+      <div class="ai-hint">↑ подставил AI · проверьте</div>
     </div>
-    <div class="field">
+    <div class="field ai">
       <label>Дата события</label>
-      <input class="control data" type="text" value="12.03.2026">
-      <div class="helper">Когда документ датирован, а не когда внесён.</div>
+      <input class="control data" type="text" value="14.07.2026">
+      <div class="ai-hint">↑ подставил AI · проверьте</div>
     </div>
     <div class="field error">
       <label>Дата события</label>
       <input class="control data" type="text" value="32.13.2026">
       <div class="helper">Такой даты нет. Проверьте день и месяц.</div>
     </div>
-    <p class="note">Ошибка не извиняется и говорит, что делать. Данные (даты, числа) — моноширинным шрифтом.</p>
+    <p class="note">+ v2: код «AI подставил» (<code style="font-family:var(--mono); font-size:var(--t-caption)">.field.ai</code>) — синий пунктир снизу + подпись. Третья категория поверх «факт (чернила)» и «пометка (карандаш)»: машинная догадка, требующая взгляда человека. Ошибка (красный) и AI (синий) не смешиваются.</p>
+  </section>
+
+  <!-- AI-ПРЕДЛОЖЕНИЕ ПАЦИЕНТА -->
+  <section>
+    <div class="sec-label"><span>AI-предложение пациента (B7)</span><span class="tag new">новое</span></div>
+    <div class="ai-suggest"><span class="t">AI считает, что это запись <b>Арины</b>, а не Дмитрия. Чтобы принять — выберите её монограмму.</span></div>
+    <div class="switcher">
+      <button class="who accent-1"><span class="mono-badge">ДИ</span><span>Дмитрий</span></button>
+      <button class="who accent-3" style="--who-accent: var(--accent-3)"><span class="mono-badge" style="border:1px dashed var(--ink-blue)">АИ</span><span>Арина</span></button>
+    </div>
+    <p class="note">+ v2: баннер-пояснение синими чернилами. Кнопки «Принять» нет — принятие остаётся тапом по пунктирной монограмме (решение 15.07.2026): один паттерн выбора пациента, и не появляется вторая primary на экране.</p>
   </section>
 
   <!-- КОММЕНТАРИЙ = КАРАНДАШ -->
   <section>
-    <div class="sec-label">Комментарий — «карандашная» заметка</div>
+    <div class="sec-label"><span>Комментарий — «карандашная» заметка</span></div>
     <div class="field">
       <label>Ваша пометка <span class="opt">— чего нет в документе</span></label>
       <textarea class="control pencil" placeholder="Понравился врач. Сказал прийти через месяц…"></textarea>
@@ -352,12 +440,12 @@
     <div style="max-width:420px">
       <div class="pencil-note">Врач хороший, спокойный. Просил не забыть про повторный анализ через 3 недели.</div>
     </div>
-    <p class="note">Комментарий визуально отделён от фактов: карандашный серый курсив, как заметка на полях. Так глаз сразу отличает «что в документе» от «что от себя».</p>
+    <p class="note">Без изменений.</p>
   </section>
 
   <!-- ТИПЫ (ЧИПЫ) -->
   <section>
-    <div class="sec-label">Тип записи — открытое поле</div>
+    <div class="sec-label"><span>Тип записи — открытое поле</span></div>
     <div class="row">
       <span class="chip" aria-selected="true">анализ</span>
       <span class="chip">выписка</span>
@@ -367,123 +455,178 @@
       <span class="chip">вакцинация</span>
       <span class="chip">+ свой тип</span>
     </div>
-    <p class="note">Частые типы — для быстрого выбора. Но список открытый: можно вписать свой или не указывать. Ни один документ не должен упереться в отсутствие категории.</p>
+    <p class="note">Без изменений. Выбор пациента чипами НЕ делается — пациент всегда монограммой (решение 15.07.2026).</p>
   </section>
 
-  <!-- ПЕРЕКЛЮЧАТЕЛЬ ЧЛЕНОВ СЕМЬИ -->
+  <!-- СТАТУС-БЕЙДЖ -->
   <section>
-    <div class="sec-label">Переключатель профиля — без картинок, инициалы</div>
+    <div class="sec-label"><span>Статус записи — язык состояния</span><span class="tag new">новое</span></div>
+    <div class="row" style="align-items:center; gap:var(--s4)">
+      <span class="badge pending"><span class="dot"></span>загружено</span>
+      <span class="badge pending"><span class="dot"></span>разбирается</span>
+      <span class="badge review"><span class="dot"></span>разобрано — проверьте</span>
+      <span class="badge failed"><span class="dot"></span>разбор не удался</span>
+      <span class="badge done"><span class="dot"></span>подтверждено</span>
+    </div>
+    <p class="note">+ v2: единый примитив статуса (<code style="font-family:var(--mono); font-size:var(--t-caption)">.badge</code>). Цвет кодирует, нужен ли человек: карандаш с пульсом = идёт работа (и «загружено», и «разбирается» — решение 15.07.2026: подписи не врут), синий = зовёт проверить, красный = ручной ввод, зелёные чернила = подтверждено. Тексты — только из <code style="font-family:var(--mono); font-size:var(--t-caption)">PARSE_STATUS_LABELS</code> (ADR-012). В ленте бейдж несут только неподтверждённые; «подтверждено» — маркер на карточке.</p>
+  </section>
+
+  <!-- ПРЕВЬЮ СТРАНИЦ -->
+  <section>
+    <div class="sec-label"><span>Превью-список страниц (форма добавления)</span><span class="tag new">новое</span></div>
+    <div class="pages">
+      <div class="page-thumb"><div class="p-sheet"><span>скан документа</span></div><button class="p-rm" aria-label="Удалить">×</button><div class="p-cap">стр. 1</div></div>
+      <div class="page-thumb"><div class="p-sheet"><span>PDF · документ</span></div><button class="p-rm" aria-label="Удалить">×</button><div class="p-cap">стр. 2</div></div>
+      <button class="page-add"><span class="plus">＋</span>ещё<br>страница</button>
+    </div>
+    <p class="note">+ v2: упорядоченная коллекция (<code style="font-family:var(--mono); font-size:var(--t-caption)">.pages</code>). Порядок значим (страницы одного документа); кривой кадр удаляется до сохранения; «＋ ещё страница» — цикл камеры заложен в UI. Наполняет клиентский JS-накопитель (record-form.js): серверного staging нет, файлы впервые уходят одним POST /records (решение 15.07.2026).</p>
+  </section>
+
+  <!-- ПЕРЕКЛЮЧАТЕЛЬ + АКЦЕНТЫ -->
+  <section>
+    <div class="sec-label"><span>Переключатель профиля — персональные акценты</span><span class="tag chg">изм.</span></div>
     <div class="switcher">
-      <button class="who" aria-selected="true"><span class="mono-badge">ДИ</span><span>Дмитрий</span></button>
-      <button class="who"><span class="mono-badge">МИ</span><span>Мария</span></button>
-      <button class="who"><span class="mono-badge">АИ</span><span>Аня</span></button>
+      <button class="who accent-1" aria-selected="true"><span class="mono-badge">ДИ</span><span>Дмитрий</span></button>
+      <button class="who accent-2"><span class="mono-badge">МИ</span><span>Мария</span></button>
+      <button class="who accent-3"><span class="mono-badge">АИ</span><span>Арина</span></button>
     </div>
-    <p class="note">Монограмма из инициалов (имя + фамилия) вместо фото — в духе бумаги и без изображений. Активный профиль обведён чернилами. Каждый элемент — настоящая кнопка в форме POST: переключение работает без JS.</p>
+    <div class="switcher" style="margin-top:var(--s4)">
+      <button class="who accent-1"><span class="mono-badge">ДИ</span><span>Дмитрий</span></button>
+      <button class="who accent-2" aria-selected="true"><span class="mono-badge">МИ</span><span>Мария</span></button>
+      <button class="who accent-3"><span class="mono-badge">АИ</span><span>Арина</span></button>
+    </div>
+    <p class="note">изм. v2: активный профиль обводится ПЕРСОНАЛЬНЫМ акцентом — класс <code style="font-family:var(--mono); font-size:var(--t-caption)">.accent-N</code> задаёт <code style="font-family:var(--mono); font-size:var(--t-caption)">--who-accent</code> (классом, не inline-стилем: страж). Кольцо + тинт монограммы + имя. «На чью карту я смотрю» читается цветом, а не только текстом.</p>
   </section>
 
-  <!-- ШАПКА ПРИЛОЖЕНИЯ (КОМПОЗИЦИЯ) -->
+  <!-- ЛЕНТА: ШАПКА + ЭЛЕМЕНТЫ -->
   <section>
-    <div class="sec-label">Шапка приложения — переключатель + выход</div>
-    <div class="app-head">
-      <div class="switcher">
-        <button class="who" aria-selected="true"><span class="mono-badge">ДИ</span><span>Дмитрий</span></button>
-        <button class="who"><span class="mono-badge">МИ</span><span>Мария</span></button>
-        <button class="who"><span class="mono-badge">АИ</span><span>Аня</span></button>
+    <div class="sec-label"><span>Лента — заголовок, сортировка, компакт-записи</span><span class="tag new">новое</span></div>
+    <div class="accent-3">
+      <div class="feed-head">
+        <h1 class="feed-title">Арина</h1>
+        <nav class="feed-sort">
+          <a href="#" aria-current="true">по внесению</a>
+          <a href="#">по событию</a>
+        </nav>
       </div>
-      <button class="btn btn-quiet">Выйти</button>
+      <ul class="feed">
+        <li>
+          <a class="rec-lite" href="#">
+            <div class="lite-head"><span class="lite-title">Выписка из стационара</span><span class="lite-date">28.02.2026</span></div>
+            <div class="lite-meta"><span class="chip">выписка</span><span class="lite-clinic">Морозовская ДГКБ</span><span class="badge review"><span class="dot"></span>разобрано — проверьте</span></div>
+          </a>
+        </li>
+        <li>
+          <a class="rec-lite" href="#">
+            <div class="lite-head"><span class="lite-title">Общий анализ крови</span><span class="lite-date">12.03.2026</span></div>
+            <div class="lite-meta"><span class="chip">анализ</span><span class="lite-clinic">Инвитро</span></div>
+          </a>
+        </li>
+      </ul>
     </div>
-    <p class="note">Верх каждого экрана приложения: три лица семьи на расстоянии одного тапа. Выход — btn-quiet, отодвинут вправо: это не действие из ряда выбора профиля. На экране входа шапка пуста.</p>
+    <p class="note">+ v2 (продукт Э5): шапка ленты — имя активного профиля его акцентом + переключатель сортировки (mono-ссылки, активная — aria-current, подчёркнута чернилами). Элемент — <code style="font-family:var(--mono); font-size:var(--t-caption)">.rec-lite</code>, вся запись — ссылка: подтверждённая → карточка, неподтверждённая → проверка (бейдж только у них). Без сниппета содержания: лента отвечает «что и когда».</p>
   </section>
 
   <!-- ЗАПИСЬ (КОМПОЗИЦИЯ) -->
   <section>
-    <div class="sec-label">Запись — сборка из примитивов (signature)</div>
+    <div class="sec-label"><span>Запись — карточка (signature)</span><span class="tag chg">изм.</span></div>
     <div class="record">
       <div class="rec-head">
-        <div class="rec-title">Общий анализ крови</div>
-        <div class="rec-date">12.03.2026</div>
+        <div class="rec-title">Общий анализ крови <span class="chip" style="cursor:default">анализ</span></div>
+        <div class="rec-datewrap">
+          <div class="rec-date">12.03.2026</div>
+          <span class="badge done"><span class="dot"></span>подтверждено</span>
+        </div>
       </div>
       <div class="rec-body">
         <div class="rec-meta">
-          <div class="m"><div class="k">Пациент</div><div class="v">Аня</div></div>
+          <div class="m"><div class="k">Пациент</div><div class="v">Арина</div></div>
           <div class="m"><div class="k">Клиника</div><div class="v">Инвитро</div></div>
           <div class="m"><div class="k">Врач</div><div class="v">—</div></div>
-          <div class="m"><div class="k">Тип</div><div class="v">анализ</div></div>
+          <div class="m"><div class="k">Внесено</div><div class="v rec-date">14.03.2026</div></div>
         </div>
         <div class="rec-content">Гемоглобин, эритроциты, лейкоцитарная формула. Все показатели в пределах референса лаборатории.</div>
         <div class="pencil-note" style="margin-top:var(--s3)">Пересдать через 3 недели — просил педиатр.</div>
+        <ul class="page-flow">
+          <li>
+            <div class="page-plate">скан страницы (фото на всю ширину)</div>
+            <div class="p-foot"><span class="n">стр. 1 из 2</span><a href="#">Скачать оригинал</a></div>
+          </li>
+          <li>
+            <a class="page-plate" href="#">PDF · открыть</a>
+            <div class="p-foot"><span class="n">стр. 2 из 2</span><a href="#">Скачать оригинал</a></div>
+          </li>
+        </ul>
       </div>
       <div class="rec-actions">
-        <button class="btn btn-secondary">Открыть файл</button>
         <button class="btn btn-quiet">Редактировать</button>
         <button class="btn btn-danger" style="margin-left:auto">Удалить</button>
       </div>
     </div>
-    <p class="note">Факты — чернилами. Пометка — карандашом. Удаление — красным и отодвинуто вправо, чтобы не нажать случайно.</p>
+    <p class="note">изм. v2: мягкая высота (<code style="font-family:var(--mono); font-size:var(--t-caption)">--lift-md</code>), маркер «подтверждено» в шапке (<code style="font-family:var(--mono); font-size:var(--t-caption)">rec-datewrap</code>), страницы — вертикальным потоком <code style="font-family:var(--mono); font-size:var(--t-caption)">page-flow</code> внутри rec-body (единый «лист»; плашки — PDF и «файл недоступен», B7). Дата события — в шапке, дата внесения — в meta: «когда было» и «когда внесли» не путаются. Кнопки действий — с этапа 6.</p>
   </section>
 
-  <!-- ЛЕНТА (КОМПОЗИЦИЯ ИЗ КОМПАКТ-ЗАПИСЕЙ) -->
+  <!-- НИЖНИЙ БАР -->
   <section>
-    <div class="sec-label">Лента — компакт-записи, сортировка, статус-бейдж</div>
-    <nav class="feed-sort">
-      <a class="btn btn-quiet" href="#" aria-current="true">по внесению</a>
-      <a class="btn btn-quiet" href="#">по событию</a>
-    </nav>
-    <ul class="feed">
-      <li>
-        <a class="record compact" href="#">
-          <div class="rec-head">
-            <span class="rec-title">Общий анализ крови</span>
-            <span class="rec-date">12.03.2026</span>
-          </div>
-          <div class="rec-meta">
-            <span class="chip">анализ</span>
-            <span>Инвитро</span>
-          </div>
-        </a>
-      </li>
-      <li>
-        <a class="record compact" href="#">
-          <div class="rec-head">
-            <span class="rec-title">Запись без названия</span>
-            <span class="rec-date">10.03.2026</span>
-          </div>
-          <div class="rec-meta">
-            <span class="status-badge">разобрано</span>
-          </div>
-        </a>
-      </li>
-    </ul>
-    <p class="note">Элемент ленты — компакт-вариант записи, весь элемент — ссылка (подтверждённая ведёт на карточку, неподтверждённая — на проверку). Без сниппета содержания: лента отвечает «что и когда». Бейдж носят только неподтверждённые. Активная сортировка — чернилами, aria-current.</p>
-  </section>
-
-  <!-- ПОТОК ВВОДА -->
-  <section>
-    <div class="sec-label">Поток добавления — реальная последовательность</div>
-    <div class="steps">
-      <div class="step"><div class="n">01</div><div class="t">Снимок</div><div class="d">Фото или PDF. Файл уже сохранён.</div></div>
-      <div class="step"><div class="n">02</div><div class="t">Разбор</div><div class="d">AI разложил по полям. Взгляд, правка при нужде.</div></div>
-      <div class="step"><div class="n">03</div><div class="t">Готово</div><div class="d">Один тап — запись в карте.</div></div>
+    <div class="sec-label"><span>Нижний бар действия</span><span class="tag new">новое</span></div>
+    <div style="max-width:420px; border:var(--hair); border-radius:var(--radius); overflow:hidden;">
+      <div style="height:120px; background:var(--sheet); display:flex; align-items:center; justify-content:center; color:var(--pencil-soft); font-size:var(--t-small);">…содержимое экрана…</div>
+      <div class="action-bar" style="position:static;">
+        <button class="btn btn-secondary btn-lg">Отмена</button>
+        <div class="bar-main">
+          <button class="btn btn-primary btn-lg" disabled>Сохранить</button>
+          <span class="bar-helper">Добавьте фото или заметку</span>
+        </div>
+      </div>
     </div>
-    <p class="note">Нумерация оправдана: это настоящий порядок шагов. Файл сохраняется на шаге 01 — провал разбора не отменяет сохранение.</p>
+    <p class="note">+ v2: единственное первичное действие экрана закреплено внизу (<code style="font-family:var(--mono); font-size:var(--t-caption)">.action-bar</code>) — в зоне большого пальца при одноручном хвате (§6: телефон-first, цель ≥44px). Здесь же живут disabled-состояние и helper. Правило «одна primary на экран» сохранено.</p>
+  </section>
+
+  <!-- МОДАЛКА (ЗАДЕЛ Э6) -->
+  <section>
+    <div class="sec-label"><span>Модалка подтверждения — «лист» снизу</span><span class="tag new">новое · с Э6</span></div>
+    <div style="position:relative; max-width:420px; height:220px; border:var(--hair); border-radius:var(--radius); overflow:hidden;">
+      <div class="sheet-overlay" style="position:absolute;">
+        <div class="sheet-modal">
+          <h3>Удалить запись?</h3>
+          <p>Запись скроется из ленты и поиска.</p>
+          <div class="row">
+            <button class="btn btn-secondary">Отмена</button>
+            <button class="btn btn-danger">Удалить запись</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">+ v2, задел этапа 6: подтверждение удаления (правило §5 — удаление всегда обособлено и с подтверждением). До Э6 в продукте не используется; тексты утвердим при нарезке Э6.</p>
   </section>
 
   <!-- ПУСТОЙ ЭКРАН + ПОДТВЕРЖДЕНИЕ -->
   <section>
-    <div class="sec-label">Пустой экран и подтверждение</div>
+    <div class="sec-label"><span>Пустой экран и подтверждение</span></div>
     <div class="empty">
-      <h3>Здесь пока пусто</h3>
+      <h3>Арина — записей пока нет</h3>
       <p>Сфотографируйте выписку, результат анализа или рецепт — остальное подставится само.</p>
       <button class="btn btn-primary btn-lg">Добавить первую запись</button>
     </div>
     <div style="margin-top:var(--s4)">
       <span class="toast"><span class="dot"></span> Запись сохранена</span>
     </div>
-    <p class="note">Пустой экран — приглашение действовать, а не заглушка. Подтверждение короткое, зелёными чернилами.</p>
+    <p class="note">Без изменений (пустое состояние именуется активным профилем; первичное действие — внутри, нижний бар на пустом экране не показывается).</p>
+  </section>
+
+  <!-- ПОТОК ВВОДА -->
+  <section>
+    <div class="sec-label"><span>Поток добавления — реальная последовательность</span></div>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><div class="t">Снимок</div><div class="d">Фото или PDF. Файл уже сохранён.</div></div>
+      <div class="step"><div class="n">02</div><div class="t">Разбор</div><div class="d">AI разложил по полям. Взгляд, правка при нужде.</div></div>
+      <div class="step"><div class="n">03</div><div class="t">Готово</div><div class="d">Один тап — запись в карте.</div></div>
+    </div>
+    <p class="note">Без изменений.</p>
   </section>
 
   <div class="kit-head" style="border-bottom:none; border-top:2px solid var(--ink); margin-top:var(--s7); margin-bottom:0; padding-top:var(--s4);">
-    <p style="font-style:normal">Все экраны собираются только из этих примитивов и токенов. Новый примитив вводится осознанно, а не по ходу.</p>
+    <p style="font-style:normal">v2 расширяет систему осознанно (§8): +5 токен-групп, +7 примитивов, +2 изменённых. Экраны по-прежнему собираются только из токенов и примитивов кита. Основной кит с 15.07.2026; v1 — в истории git.</p>
   </div>
 
 </div>

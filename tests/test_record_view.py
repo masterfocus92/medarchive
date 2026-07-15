@@ -240,7 +240,11 @@ def test_card_full_composition(client, db_setup):
     assert "Инвитро" in html and "Петрова" in html
     assert 'class="rec-content"' in html and "Гемоглобин в норме" in html
     assert 'class="pencil-note"' in html and "пересдать через месяц" in html
-    assert "подтверждено" in html  # статус-строка
+    # Кит v2: маркер «подтверждено» — бейдж done в шапке (rec-datewrap),
+    # статус-строка внизу упразднена.
+    assert 'class="rec-datewrap"' in html
+    assert 'class="badge done"' in html and "подтверждено" in html
+    assert 'class="status-line"' not in html
     assert html.count("btn-primary") == 0  # карточка read-only (❓8)
 
 
@@ -250,7 +254,21 @@ def test_note_card_has_no_pages_block(client, db_setup):
 
     html = client.get(f"/records/{record_id}").text
 
-    assert 'class="pages' not in html
+    assert 'class="page-flow"' not in html
+
+
+def test_pages_live_inside_record_body(client, db_setup):
+    """Кит v2: страницы — вертикальный поток внутри rec-body, карточка —
+    единый «лист» (утверждённый поток просмотра)."""
+    record_id = _create(client, db_setup, n_files=1)
+    _confirm(db_setup, record_id)
+
+    html = client.get(f"/records/{record_id}").text
+
+    body_start = html.index('class="rec-body"')
+    flow_start = html.index('class="page-flow"')
+    article_end = html.index("</article>")
+    assert body_start < flow_start < article_end
 
 
 def test_photo_page_links_and_download(client, db_setup):

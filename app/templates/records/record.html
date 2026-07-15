@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/ui.html" import badge %}
 
 {% block title %}Запись — Семейная медкарта{% endblock %}
 
@@ -10,11 +11,13 @@
 {% endblock %}
 
 {% block content %}
-{# Экран проверки (T4.4/T4.5). Он же — режим правки (Э6). #}
+{# Экран проверки (T4.4/T4.5, кит v2 — Э5.5). Он же — режим правки (Э6). #}
 <h1>{{ record.title or "Запись" }}
 {% if record.record_type %} <span class="chip">{{ record.record_type }}</span>{% endif %}</h1>
 
-<p class="status-line">статус: {{ status_label }}</p>
+{# Статус — бейджем (кит v2): цвет кодирует, нужен ли человек. #}
+{{ badge(status_kind, status_label) }}
+
 {% if can_retry %}
 <form method="post" action="/records/{{ record.id }}/reparse">
   {# Ошибка не тупик: разбор перезапускается одной кнопкой (❓6). #}
@@ -30,39 +33,46 @@
 </p>
 {% endif %}
 
-<form method="post" action="/records/{{ record.id }}/confirm">
+<form method="post" action="/records/{{ record.id }}/confirm" id="review-form">
   {% if error %}
   <div class="field error">
     <p class="helper" role="alert">{{ error }}</p>
   </div>
   {% endif %}
 
-  <div class="field">
+  {# AI-заполненные поля несут код field.ai + ai-hint (кит v2): машинная
+     догадка видна, пока человек не подтвердил. Список полей — ai_fields
+     из services/ui (контракт T5.5.2), шаблон решений не принимает. #}
+  <div class="field{% if 'title' in ai_fields %} ai{% endif %}">
     <label for="f-title">Название</label>
     <input class="control" id="f-title" name="title" type="text"
       value="{{ record.title or '' }}">
+    {% if 'title' in ai_fields %}<div class="ai-hint">↑ подставил AI · проверьте</div>{% endif %}
   </div>
 
-  <div class="field">
+  <div class="field{% if 'event_date' in ai_fields %} ai{% endif %}">
     <label for="f-event-date">Дата события</label>
     <input class="control data" id="f-event-date" name="event_date" type="date"
       value="{{ record.event_date.isoformat() if record.event_date else '' }}">
-    <div class="helper">Когда документ датирован, а не когда внесён.</div>
+    {% if 'event_date' in ai_fields %}<div class="ai-hint">↑ подставил AI · проверьте</div>
+    {% else %}<div class="helper">Когда документ датирован, а не когда внесён.</div>{% endif %}
   </div>
 
-  <div class="field">
+  <div class="field{% if 'clinic' in ai_fields %} ai{% endif %}">
     <label for="f-clinic">Клиника</label>
     <input class="control" id="f-clinic" name="clinic" type="text"
       value="{{ record.clinic or '' }}">
+    {% if 'clinic' in ai_fields %}<div class="ai-hint">↑ подставил AI · проверьте</div>{% endif %}
   </div>
 
-  <div class="field">
+  <div class="field{% if 'doctor' in ai_fields %} ai{% endif %}">
     <label for="f-doctor">Врач</label>
     <input class="control" id="f-doctor" name="doctor" type="text"
       value="{{ record.doctor or '' }}">
+    {% if 'doctor' in ai_fields %}<div class="ai-hint">↑ подставил AI · проверьте</div>{% endif %}
   </div>
 
-  <div class="field">
+  <div class="field{% if 'record_type' in ai_fields %} ai{% endif %}">
     <label for="f-type">Тип</label>
     <input class="control" id="f-type" name="record_type" type="text"
       value="{{ record.record_type or '' }}" list="record-types">
@@ -73,11 +83,13 @@
       <option value="выписка"></option>
       <option value="узи"></option>
     </datalist>
+    {% if 'record_type' in ai_fields %}<div class="ai-hint">↑ подставил AI · проверьте</div>{% endif %}
   </div>
 
-  <div class="field">
+  <div class="field{% if 'content' in ai_fields %} ai{% endif %}">
     <label for="f-content">Содержание</label>
     <textarea class="control" id="f-content" name="content">{{ record.content or '' }}</textarea>
+    {% if 'content' in ai_fields %}<div class="ai-hint">↑ подставил AI · проверьте</div>{% endif %}
   </div>
 
   <div class="field">
@@ -88,12 +100,16 @@
   <div class="field">
     <label>Чья запись</label>
     {% if suggested_patient %}
-    <div class="helper">AI считает, что это запись: {{ suggested_patient.first_name }} —
-      выберите монограмму, чтобы принять.</div>
+    {# B7 (кит v2): баннер-пояснение без кнопки — принятие тапом по
+       пунктирной монограмме (решение 15.07.2026). #}
+    <div class="ai-suggest"><span class="t">AI считает, что это запись
+      <b>{{ suggested_patient.first_name }}</b> — чтобы согласиться, выберите монограмму.</span></div>
     {% endif %}
     <div class="switcher patient-pick">
       {% for member in members %}
-      <label class="who{% if suggested_patient and member.id == suggested_patient.id %} suggested{% endif %}">
+      {# Класс акцента: выбранный пациент подсвечивается своим цветом
+         (идентичность члена семьи, правка владельца 15.07.2026). #}
+      <label class="who {{ member.accent }}{% if suggested_patient and member.id == suggested_patient.id %} suggested{% endif %}">
         <input type="radio" name="patient_id" value="{{ member.id }}"
           {% if member.id == record.patient_id %}checked{% endif %}>
         <span class="mono-badge">{{ member.initials }}</span>
@@ -103,7 +119,12 @@
     </div>
   </div>
 
-  <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
-  <a class="btn btn-quiet" href="/">Отмена</a>
+  {# Первичное действие — в нижнем баре (кит v2), одна primary на экран. #}
+  <div class="action-bar">
+    <a class="btn btn-secondary btn-lg" href="/">Отмена</a>
+    <div class="bar-main">
+      <button type="submit" class="btn btn-primary btn-lg">Сохранить</button>
+    </div>
+  </div>
 </form>
 {% endblock %}

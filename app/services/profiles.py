@@ -7,6 +7,7 @@
 """
 
 from app.models import Account, FamilyMember
+from app.services.ui import accent_class
 
 SESSION_ACTIVE_MEMBER_KEY = "active_member_id"
 
@@ -20,12 +21,18 @@ def initials(first_name: str, last_name: str) -> str:
 def switcher_context(session_data, account: Account, members: list[FamilyMember]) -> dict:
     """Контекст шапки (переключатель) — общий для всех экранов с members.
 
-    Контракт T2.4-BE/T2.5-FE: members[{id, full_name, first_name,
-    initials, is_active}] + active_member.
+    Контракт T2.4-BE/T2.5-FE (+Э5.5): members[{id, full_name, first_name,
+    initials, is_active, accent}] + active_member + active_accent —
+    класс акцента активного профиля для заголовка ленты (кит v2).
     """
     active = resolve_active_member(session_data, account, members)
-    return {
-        "members": [
+    context_members = []
+    active_accent = ""
+    for index, member in enumerate(members):
+        accent = accent_class(index)
+        if member.id == active.id:
+            active_accent = accent
+        context_members.append(
             {
                 "id": member.id,
                 "full_name": member.full_name,
@@ -33,10 +40,13 @@ def switcher_context(session_data, account: Account, members: list[FamilyMember]
                 "first_name": member.first_name,
                 "initials": initials(member.first_name, member.last_name),
                 "is_active": member.id == active.id,
+                "accent": accent,
             }
-            for member in members
-        ],
+        )
+    return {
+        "members": context_members,
         "active_member": active,
+        "active_accent": active_accent,
     }
 
 

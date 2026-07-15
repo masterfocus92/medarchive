@@ -9,11 +9,12 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import PARSE_STATUS_LABELS, Account, ParseStatus
+from app.models import Account
 from app.repositories.members import list_by_family
 from app.repositories.records import FEED_SORTS, list_by_patient
 from app.routes.deps import get_current_account
 from app.services.profiles import switcher_context
+from app.services.ui import feed_badge
 
 router = APIRouter()
 
@@ -37,23 +38,25 @@ def index(
         sort = "created"
     records = list_by_patient(db, context["active_member"].id, sort)
     context["sort"] = sort
-    context["records"] = [
-        {
-            "id": r.id,
-            "title": r.title,
-            "event_date": r.event_date,
-            "created_at": r.created_at,
-            "record_type": r.record_type,
-            "clinic": r.clinic,
-            # Бейдж — только у неподтверждённых (❓2): подтверждённая
-            # запись в ленте не нуждается в подписи о своём состоянии.
-            "status_label": None
-            if r.confirmed_at is not None
-            else PARSE_STATUS_LABELS.get(ParseStatus(r.parse_status)),
-            "confirmed": r.confirmed_at is not None,
-        }
-        for r in records
-    ]
+    feed = []
+    for r in records:
+        # Бейдж — только у неподтверждённых (❓2, правило в services/ui):
+        # подтверждённая запись в ленте не носит подписи о состоянии.
+        kind, label = feed_badge(r)
+        feed.append(
+            {
+                "id": r.id,
+                "title": r.title,
+                "event_date": r.event_date,
+                "created_at": r.created_at,
+                "record_type": r.record_type,
+                "clinic": r.clinic,
+                "status_label": label,
+                "status_kind": kind,
+                "confirmed": r.confirmed_at is not None,
+            }
+        )
+    context["records"] = feed
     # Flash-тост: положил-показал-стёр (контракт T3.2).
     context["flash"] = request.session.pop("flash", None)
     return templates.TemplateResponse(request, "index.html", context)

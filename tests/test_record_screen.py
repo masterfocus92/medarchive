@@ -2,6 +2,7 @@
 ретрай, статус-бейдж неподтверждённой записи в ленте (Э5)."""
 
 import io
+import re
 from datetime import date
 
 import pytest
@@ -171,7 +172,7 @@ def test_draft_fields_are_prefilled(client, db_setup):
 
     assert 'value="Общий анализ крови"' in html
     assert 'value="Клиника Здоровье"' in html
-    assert "разобрано" in html
+    assert "разобрано — проверьте" in html  # подпись parsed (решение 15.07.2026)
 
 
 def test_active_pipeline_page_refreshes_itself(client, db_setup):
@@ -300,13 +301,69 @@ def test_unconfirmed_record_wears_badge_in_feed(client, db_setup):
     client.post(f"/profile/{ids['child']}")
     index = client.get("/").text
     assert "Ждут проверки" not in index
-    assert "разобрано" in _feed_item(index, record_id)
+    assert "разобрано — проверьте" in _feed_item(index, record_id)
 
     client.post(f"/records/{record_id}/confirm", data={"patient_id": ids["child"]})
 
     # Подтверждённая запись остаётся в ленте, но бейдж больше не носит.
     index = client.get("/").text
     assert "разобрано" not in _feed_item(index, record_id)
+
+
+# ---------- T5.5.6: кит v2 на экране проверки ----------
+
+
+def test_ai_filled_fields_wear_ai_code(client, db_setup):
+    """Кит v2: поля, подставленные AI, несут field.ai + ai-hint — ровно
+    непустые draft-поля parsed-неподтверждённой записи (контракт T5.5.2)."""
+    record_id = _create_with_file(client, db_setup)
+    _set(db_setup, record_id, parse_status="parsed", title="Общий анализ", clinic="Инвитро")
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert html.count('class="field ai"') == 2  # title и clinic; пустые поля чисты
+    assert "подставил AI · проверьте" in html
+    assert 'class="badge review"' in html  # статус — бейджем
+
+
+def test_failed_parse_has_no_ai_marks_and_failed_badge(client, db_setup):
+    record_id = _create_with_file(client, db_setup)
+    _set(db_setup, record_id, parse_status="parse_failed")
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert 'class="field ai"' not in html
+    assert "подставил AI" not in html
+    assert 'class="badge failed"' in html and "разбор не удался" in html
+
+
+def test_review_screen_action_bar_single_primary(client, db_setup):
+    """Первичное действие — в нижнем баре; кнопки «Принять» нет
+    (решение 15.07.2026): принятие AI-пациента — тап по монограмме."""
+    record_id = _create_with_file(client, db_setup)
+    _set(db_setup, record_id, parse_status="parsed")
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert 'class="action-bar"' in html
+    assert html.count("btn-primary") == 1
+    assert "Принять" not in html
+
+
+def test_suggested_patient_banner_is_ai_suggest(client, db_setup):
+    record_id = _create_with_file(client, db_setup)
+    engine, ids = db_setup
+    with Session(engine) as session:
+        record = session.get(HealthRecord, record_id)
+        record.parse_status = "parsed"
+        record.suggested_patient_id = ids["child"]
+        record.patient_id = record.author.family_member_id
+        session.commit()
+
+    html = client.get(f"/records/{record_id}").text
+
+    assert 'class="ai-suggest"' in html
+    assert "AI считает" in html
 
 
 # ---------- T4.5: дизайн-контракт экрана проверки ----------
@@ -338,7 +395,9 @@ def test_suggested_patient_is_highlighted(client, db_setup):
     html = client.get(f"/records/{record_id}").text
 
     assert "AI считает" in html
-    assert 'class="who suggested"' in html  # монограмма предложения подсвечена
+    # Монограмма предложения подсвечена; между who и suggested — класс
+    # персонального акцента (правка 15.07.2026), поэтому не точная строка.
+    assert re.search(r'class="who accent-\d suggested"', html)
 
 
 def test_confirmed_at_set_by_note_creation_shows_no_retry(client, db_setup):

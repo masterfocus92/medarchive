@@ -12,6 +12,7 @@
   var pickerBtn = document.getElementById("picker-btn");
   var pagesList = document.getElementById("pages");
   var saveBtn = document.getElementById("save-btn");
+  var saveHelper = document.getElementById("save-helper");
   var comment = document.getElementById("f-comment");
   if (!camera || !picker || typeof DataTransfer === "undefined") return;
 
@@ -27,7 +28,11 @@
   pickerBtn.addEventListener("click", function () { picker.click(); });
 
   function syncSaveButton() {
-    saveBtn.disabled = store.files.length === 0 && comment.value.trim() === "";
+    /* Зеркало инварианта B4: disabled живёт только здесь — в исходном HTML
+       кнопка активна, без JS инвариант держит сервер (ADR-011). */
+    var isEmpty = store.files.length === 0 && comment.value.trim() === "";
+    saveBtn.disabled = isEmpty;
+    if (saveHelper) saveHelper.hidden = !isEmpty;
   }
 
   function removePage(index) {
@@ -40,43 +45,53 @@
   }
 
   function render() {
+    /* Разметка миниатюр — примитив pages/page-thumb/page-add кита v2:
+       JS рендерит ровно то, что показывает кит (паритет с дизайном
+       без серверного staging — решение 15.07.2026). */
     pagesList.innerHTML = "";
     Array.prototype.forEach.call(store.files, function (file, index) {
-      var item = document.createElement("li");
-      item.className = "page";
+      var item = document.createElement("div");
+      item.className = "page-thumb";
 
-      var thumb;
+      var sheet = document.createElement("div");
+      sheet.className = "p-sheet";
       if (file.type.indexOf("image/") === 0) {
-        thumb = document.createElement("img");
-        thumb.className = "page-thumb";
-        thumb.alt = "";
-        thumb.src = URL.createObjectURL(file);
+        /* Превью кадра фоном «листа». Inline-стиль ставит скрипт по месту —
+           страж запрещает inline-стили в шаблонах, не в runtime. */
+        sheet.style.backgroundImage = "url(" + URL.createObjectURL(file) + ")";
       } else {
-        thumb = document.createElement("span");
-        thumb.className = "page-thumb page-thumb-doc";
-        thumb.textContent = "PDF";
+        var label = document.createElement("span");
+        label.textContent = "PDF · документ";
+        sheet.appendChild(label);
       }
-
-      var name = document.createElement("span");
-      name.className = "page-name";
-      name.textContent = (index + 1) + ". " + file.name;
 
       var remove = document.createElement("button");
       remove.type = "button";
-      remove.className = "page-remove";
+      remove.className = "p-rm";
       remove.setAttribute("aria-label", "Убрать страницу " + (index + 1));
-      remove.textContent = "✕";
+      remove.textContent = "×";
       remove.addEventListener("click", function () { removePage(index); });
 
-      item.appendChild(thumb);
-      item.appendChild(name);
+      var caption = document.createElement("div");
+      caption.className = "p-cap";
+      caption.textContent = "стр. " + (index + 1);
+
+      item.appendChild(sheet);
       item.appendChild(remove);
+      item.appendChild(caption);
       pagesList.appendChild(item);
     });
 
-    /* Цикл потока К: камера отдаёт по кадру — после первого кнопка
-       зовёт доснять следующую страницу. */
-    cameraBtn.textContent = store.files.length ? "＋ Ещё страница" : "Сфотографировать";
+    /* Цикл потока К (кит v2): «＋ ещё страница» живёт в конце превью-списка
+       и снова открывает камеру — по кадру за вызов. */
+    if (store.files.length) {
+      var add = document.createElement("button");
+      add.type = "button";
+      add.className = "page-add";
+      add.innerHTML = '<span class="plus">＋</span>ещё<br>страница';
+      add.addEventListener("click", function () { camera.click(); });
+      pagesList.appendChild(add);
+    }
 
     picker.files = store.files;
     camera.value = "";
