@@ -1,48 +1,68 @@
-# Runbook: настройка VPS (этап 6.5, ADR-015/016/017)
+# Гайд: развёртывание релизного контура (этап 6.5)
 
-Пошаговая установка релизного контура на VPS (Ubuntu 22.04, 1 ГБ RAM).
-Выполняется root'ом один раз. Секреты нигде не коммитятся.
-Процесс релиза после настройки — `RELEASE.md` в корне репозитория.
+Полный список действий владельца — от DNS до первого автодеплоя. Основа: ADR-015 (контур), ADR-016 (бэкапы/prod2stg), ADR-017 (нативный PG). Процесс релиза после настройки — `RELEASE.md`.
 
-## 0. Что понадобится
+Обозначения: **[Локально]** — ваш компьютер · **[Панель]** — веб-интерфейс (регистратор/Яндекс/GitHub) · **[VPS]** — по SSH под root. После каждого шага — ✅ проверка: не идите дальше, пока она не сходится.
 
-- SSH-доступ root (или sudo) к VPS.
-- Домен `mdkarta.online` в панели регистратора.
-- Аккаунт Яндекс Облака (Object Storage) — бакет и статический ключ доступа.
-- GitHub-репозиторий проекта (права admin — для Secrets и Environments).
+Замените по тексту: `<IP_VPS>` — IP сервера; пароли `CHANGE_ME_*` — придумывайте (генератор: `openssl rand -hex 32`) и **записывайте в надёжное место** — они понадобятся в нескольких шагах.
 
-## 1. База: swap, пользователи, каталоги (T6.5.1)
+Время: ~1,5 часа. Порядок важен: DNS — первым (записи расходятся не мгновенно).
+
+---
+
+## Шаг 1. DNS — два домена на VPS **[Панель регистратора]**
+
+1. Откройте управление DNS-зоной `mdkarta.online`.
+2. Создайте две A-записи:
+   - имя `@` (или пусто) → `<IP_VPS>`
+   - имя `stg` → `<IP_VPS>`
+
+✅ **[Локально]** через 5–30 минут: `dig +short mdkarta.online` и `dig +short stg.mdkarta.online` возвращают `<IP_VPS>`.
+
+## Шаг 2. Яндекс Облако — бакет для бэкапов **[Панель]**
+
+> Названия пунктов меню консоли могут немного отличаться — суть: бакет + сервисный аккаунт + статический S3-ключ.
+
+1. В консоли Яндекс Облака (console.yandex.cloud) создайте **Object Storage → бакет**: имя `mdkarta-backup`, доступ — приватный, класс хранения по умолчанию — «Холодное» (бэкапы пишутся редко, читаются ещё реже).
+2. **IAM → Сервисные аккаунты → создать**: имя `mdkarta-backup-writer`, роль `storage.editor` (можно только на этот бакет).
+3. У сервисного аккаунта создайте **статический ключ доступа** — получите пару «идентификатор ключа» (`ACCESS_KEY`) и «секретный ключ» (`SECRET_KEY_S3`). Секрет показывается один раз — сохраните.
+
+✅ Ключи записаны, бакет виден в консоли пустым.
+
+## Шаг 3. База VPS: swap, пользователи, uv **[VPS]**
 
 ```bash
-# Swap 2 ГБ (ADR-017)
+ssh root@<IP_VPS>
+
+# Swap 2 ГБ (ADR-017: 1 ГБ RAM — страховка от OOM)
 fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
 echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
-# Пользователи: medarchive — владелец приложения; deploy — только для CI-деплоя
+# Пользователи: medarchive — владелец приложения; deploy — только для CI
 useradd --system --create-home --shell /bin/bash medarchive
 useradd --create-home --shell /bin/bash deploy
 
-# Каталоги контуров и файлов
-install -d -o medarchive -g medarchive /opt/medarchive /var/lib/medarchive/{prod,stg}/files /var/log/medarchive
-chmod 750 /var/lib/medarchive/{prod,stg}/files
+# Каталоги контуров, файлов записей, логов
+install -d -o medarchive -g medarchive /opt/medarchive /var/lib/medarchive/prod/files /var/lib/medarchive/stg/files /var/log/medarchive
+chmod 750 /var/lib/medarchive/prod/files /var/lib/medarchive/stg/files
 
-# uv (в /usr/local/bin — путь зашит в systemd-юнитах)
+# uv — в /usr/local/bin (путь зашит в systemd-юниты)
 curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh
 ```
 
-## 2. PostgreSQL 16 + pgvector нативно (T6.5.1, ADR-017)
+✅ `free -h` показывает `Swap: 2.0Gi` · `uv --version` отвечает · `id medarchive` и `id deploy` существуют.
+
+## Шаг 4. PostgreSQL 16 + pgvector **[VPS]**
 
 ```bash
-# Репозиторий PGDG
-apt install -y postgresql-common
+apt update && apt install -y postgresql-common
 /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
 apt install -y postgresql-16 postgresql-16-pgvector
+```
 
-# Тюнинг под 1 ГБ
-cp infra/postgres/medarchive.conf /etc/postgresql/16/main/conf.d/
-systemctl restart postgresql
+Роли и БД (подставьте свои пароли вместо `CHANGE_ME_PROD` / `CHANGE_ME_STG` — они пойдут в `.env` контуров на шаге 5):
 
-# Роли и БД (пароли придумать и записать в .env контуров)
+```bash
 sudo -u postgres psql <<'SQL'
 CREATE ROLE medcard_prod LOGIN PASSWORD 'CHANGE_ME_PROD';
 CREATE ROLE medcard_stg  LOGIN PASSWORD 'CHANGE_ME_STG';
@@ -50,104 +70,162 @@ CREATE DATABASE medcard_prod OWNER medcard_prod;
 CREATE DATABASE medcard_stg  OWNER medcard_stg;
 SQL
 
-# Пароль прод-БД для бэкапов (pg_dump от medarchive)
+# Пароль прод-БД для ночного pg_dump (бэкап идёт от medarchive)
 sudo -u medarchive bash -c 'echo "localhost:5432:medcard_prod:medcard_prod:CHANGE_ME_PROD" > ~/.pgpass && chmod 600 ~/.pgpass'
 ```
 
-## 3. Контуры приложения (T6.5.1)
+Тюнинг под 1 ГБ RAM — конфиг уже в репозитории, скопируем на шаге 5 после клона; пока продолжайте.
+
+✅ `sudo -u postgres psql -c '\l'` показывает `medcard_prod` и `medcard_stg`.
+
+## Шаг 5. Контуры приложения **[VPS]**
 
 ```bash
-sudo -u medarchive git clone -b main https://github.com/<owner>/<repo>.git /opt/medarchive/prod
-sudo -u medarchive git clone -b stg  https://github.com/<owner>/<repo>.git /opt/medarchive/stg
-# (ветка stg создаётся на шаге 7, до того можно клонировать main)
+# Клоны (репозиторий публичный — токены не нужны)
+sudo -u medarchive git clone -b main https://github.com/masterfocus92/medarchive.git /opt/medarchive/prod
+sudo -u medarchive git clone -b stg  https://github.com/masterfocus92/medarchive.git /opt/medarchive/stg
 
-# .env контуров — по шаблонам, заполнить CHANGE_ME (СВОИ SECRET_KEY и ключи AI!)
+# Тюнинг PG из репозитория (обещан на шаге 4)
+cp /opt/medarchive/prod/infra/postgres/medarchive.conf /etc/postgresql/16/main/conf.d/
+systemctl restart postgresql
+```
+
+`.env` контуров — по шаблонам. Заполните все `CHANGE_ME`: пароли БД из шага 4, **разные** `SECRET_KEY` (`openssl rand -hex 32` дважды), ключи RouterAI (лучше два отдельных — расходы стенда видны отдельно):
+
+```bash
 sudo -u medarchive cp /opt/medarchive/prod/infra/env.prod.example /opt/medarchive/prod/.env
 sudo -u medarchive cp /opt/medarchive/stg/infra/env.stg.example  /opt/medarchive/stg/.env
-sudo -u medarchive nano /opt/medarchive/prod/.env   # и stg
+sudo -u medarchive nano /opt/medarchive/prod/.env
+sudo -u medarchive nano /opt/medarchive/stg/.env
+```
 
-# Зависимости и миграции
+Зависимости, миграции, seed семьи (`.env.seed` — реальные данные семьи, только на сервере, шаблон подскажет поля):
+
+```bash
 sudo -u medarchive -H bash -c 'cd /opt/medarchive/prod && uv sync --frozen && uv run alembic upgrade head'
 sudo -u medarchive -H bash -c 'cd /opt/medarchive/stg  && uv sync --frozen && uv run alembic upgrade head'
 
-# Seed прод-семьи: .env.seed по шаблону .env.seed.example (реальные данные, вне git)
+sudo -u medarchive cp /opt/medarchive/prod/.env.seed.example /opt/medarchive/prod/.env.seed
 sudo -u medarchive nano /opt/medarchive/prod/.env.seed
 sudo -u medarchive -H bash -c 'cd /opt/medarchive/prod && uv run python -m app.seed'
-
-# systemd
-cp infra/systemd/medarchive-{prod,stg}.service /etc/systemd/system/
-systemctl daemon-reload
-systemctl enable --now medarchive-prod medarchive-stg
-curl -fsS localhost:8000/health && curl -fsS localhost:8001/health   # оба {"status":"ok"}
 ```
 
-## 4. Caddy и DNS (T6.5.2)
+systemd-юниты:
 
-1. В панели регистратора: A-записи `mdkarta.online` и `stg.mdkarta.online` → IP VPS.
-2. Дописать блоки из `infra/caddy/Caddyfile.medarchive` в `/etc/caddy/Caddyfile`
-   (существующие сайты не трогать) и `systemctl reload caddy`.
-3. Проверка: оба домена открываются по HTTPS, существующая PWA работает.
-4. Firewall: наружу только 22/80/443 (`ufw allow 22,80,443/tcp && ufw enable`);
-   8000/8001 слушают 127.0.0.1 — снаружи недоступны и без ufw.
+```bash
+cp /opt/medarchive/prod/infra/systemd/medarchive-prod.service /etc/systemd/system/
+cp /opt/medarchive/prod/infra/systemd/medarchive-stg.service  /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now medarchive-prod medarchive-stg
+```
 
-## 5. Бэкапы (T6.5.5, ADR-016)
+✅ `curl -s localhost:8000/health` и `curl -s localhost:8001/health` — оба `{"status":"ok"}`. Seed ответил «Семья создана.». Если сервис не поднялся: `journalctl -u medarchive-prod -n 50`.
 
-1. В Яндекс Облаке: бакет (например `mdkarta-backup`), сервисный аккаунт
-   со статическим ключом (только этот бакет).
-2. rclone на VPS: `apt install -y rclone`, затем от medarchive —
-   `sudo -u medarchive rclone config`:
-   - remote `yandex`: тип `s3`, provider `Other`, endpoint `storage.yandexcloud.net`,
-     ключи из п.1;
-   - remote `medarchive-crypt`: тип `crypt`, remote `yandex:mdkarta-backup`,
-     пароль шифрования — сгенерировать и **сохранить оффлайн-копию**
-     (без него бэкапы нечитаемы; это критический секрет).
-3. Установка скриптов и таймеров:
+## Шаг 6. Caddy: домены поверх существующего **[VPS]**
+
+Перед правкой — копия текущего конфига (там живёт ваша вторая PWA):
+
+```bash
+cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.bak
+cat /opt/medarchive/prod/infra/caddy/Caddyfile.medarchive >> /etc/caddy/Caddyfile
+caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
+```
+
+Firewall (если ufw ещё не включён — сначала SSH, иначе отрежете себя):
+
+```bash
+ufw allow OpenSSH && ufw allow 80,443/tcp && ufw enable
+```
+
+✅ `https://mdkarta.online` — форма входа, замочек валидный · `https://stg.mdkarta.online` — то же **плюс красная плашка «Тестовый стенд»** · ваша старая PWA открывается как раньше · вход прод-учёткой из seed работает.
+
+## Шаг 7. Бэкапы и prod2stg **[VPS]**
+
+rclone: S3-remote на бакет + crypt-обёртка (в облако уходит только шифрованное). Пароль шифрования придумайте и **сохраните оффлайн** (второй `CHANGE_ME_SALT` — тоже): без них бэкапы нечитаемы, это самый критический секрет контура.
+
+```bash
+apt install -y rclone
+
+sudo -u medarchive rclone config create yandex s3 \
+  provider=Other endpoint=storage.yandexcloud.net region=ru-central1 \
+  access_key_id=<ACCESS_KEY из шага 2> secret_access_key=<SECRET_KEY_S3 из шага 2>
+
+PASS=$(rclone obscure 'CHANGE_ME_CRYPT_PASSWORD')
+SALT=$(rclone obscure 'CHANGE_ME_SALT')
+sudo -u medarchive rclone config create medarchive-crypt crypt \
+  remote=yandex:mdkarta-backup password=$PASS password2=$SALT
+```
+
+Скрипты и таймеры (скрипты живут в `/usr/local/bin` и деплоем не обновляются — при их изменении в репо повторить эти `cp`):
 
 ```bash
 cp /opt/medarchive/prod/infra/backup.sh   /usr/local/bin/medarchive-backup   && chmod 755 /usr/local/bin/medarchive-backup
 cp /opt/medarchive/prod/infra/prod2stg.sh /usr/local/bin/medarchive-prod2stg && chmod 755 /usr/local/bin/medarchive-prod2stg
-cp /opt/medarchive/prod/infra/systemd/medarchive-{backup,prod2stg}.{service,timer} /etc/systemd/system/
+cp /opt/medarchive/prod/infra/systemd/medarchive-backup.service   /etc/systemd/system/
+cp /opt/medarchive/prod/infra/systemd/medarchive-backup.timer     /etc/systemd/system/
+cp /opt/medarchive/prod/infra/systemd/medarchive-prod2stg.service /etc/systemd/system/
+cp /opt/medarchive/prod/infra/systemd/medarchive-prod2stg.timer   /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now medarchive-backup.timer medarchive-prod2stg.timer
-
-# Первый прогон руками + проверка
-sudo -u medarchive /usr/local/bin/medarchive-backup
-rclone lsf medarchive-crypt:daily/          # дамп и архив на месте
-rclone lsf yandex:mdkarta-backup            # в бакете — только шифрованные имена
-/usr/local/bin/medarchive-prod2stg          # стенд пересобрался из бэкапа
 ```
 
-> Скрипты скопированы в `/usr/local/bin` осознанно: деплой обновляет код
-> контуров, но не системные скрипты. При изменении скриптов в репо —
-> повторить `cp` (шаг фиксируется в RELEASE.md).
+Первый прогон руками — сразу проверяем всю цепочку:
 
-## 6. Деплой и CI (T6.5.4, T6.5.7)
+```bash
+sudo -u medarchive /usr/local/bin/medarchive-backup
+rclone lsf medarchive-crypt:daily/    # видны db_*.dump и files_*.tar.gz
+rclone lsf yandex:mdkarta-backup -R | head   # а тут — только шифрованная тарабарщина
+/usr/local/bin/medarchive-prod2stg    # стенд пересобрался из бэкапа
+```
+
+✅ Оба листинга сходятся · prod2stg завершился «стенд = прод от <дата>» · на `stg.mdkarta.online` виден контент прода · `systemctl list-timers | grep medarchive` — два таймера с временем следующего запуска.
+
+## Шаг 8. Деплой-доступ и GitHub **[VPS + Панель GitHub]**
+
+**[VPS]** — установка deploy-скрипта и ограниченного CI-доступа:
 
 ```bash
 cp /opt/medarchive/prod/infra/deploy.sh /usr/local/bin/medarchive-deploy && chmod 755 /usr/local/bin/medarchive-deploy
 
-# deploy-пользователь: ключ для CI и право ровно на одну команду
 sudo -u deploy ssh-keygen -t ed25519 -N '' -f /home/deploy/.ssh/id_ci
 cat /home/deploy/.ssh/id_ci.pub >> /home/deploy/.ssh/authorized_keys
+chmod 600 /home/deploy/.ssh/authorized_keys
 echo 'deploy ALL=(root) NOPASSWD: /usr/local/bin/medarchive-deploy' > /etc/sudoers.d/medarchive-deploy
 chmod 440 /etc/sudoers.d/medarchive-deploy
+
+cat /home/deploy/.ssh/id_ci   # приватный ключ — скопируйте целиком для GitHub
 ```
 
-В GitHub (Settings репозитория):
-1. **Secrets and variables → Actions**: `DEPLOY_HOST` = IP/домен VPS,
-   `DEPLOY_SSH_KEY` = содержимое `/home/deploy/.ssh/id_ci` (приватный ключ;
-   после добавления удалить с сервера: `rm /home/deploy/.ssh/id_ci`).
-2. **Environments → New**: `production`, Required reviewers → владелец.
-3. **Branches → Protection** для `main`: require PR (merge только из `stg`),
-   require status checks (tests).
-4. Создать ветку `stg`: `git branch stg main && git push -u origin stg`.
+**[Панель GitHub]** — Settings репозитория `masterfocus92/medarchive`:
 
-## 7. Финальная проверка контура
+1. **Secrets and variables → Actions → New repository secret**, два секрета:
+   - `DEPLOY_HOST` = `<IP_VPS>`
+   - `DEPLOY_SSH_KEY` = содержимое `/home/deploy/.ssh/id_ci` (весь блок с BEGIN/END).
+2. **Environments → New environment** → имя `production` → **Required reviewers** → добавьте себя → Save. Это и есть кнопка Approve перед продом.
+3. **Branches → Add branch protection rule** для `main`: Require a pull request before merging + Require status checks (`tests`). Merge в `main` — только из `stg`.
+4. После добавления секрета удалите приватный ключ с сервера: **[VPS]** `rm /home/deploy/.ssh/id_ci`.
 
-- [ ] `https://mdkarta.online` и `https://stg.mdkarta.online` открываются, вход работает.
-- [ ] На стенде видна плашка «Тестовый стенд», на проде — нет.
-- [ ] Пуш в `stg` → Actions зелёные → стенд обновился сам.
-- [ ] Merge `stg`→`main` → job ждёт Approve → после Approve прод обновился.
-- [ ] `systemctl list-timers | grep medarchive` — оба таймера запланированы.
-- [ ] В бакете лежит шифрованный бэкап; `prod2stg` руками отрабатывает.
-- [ ] Существующая PWA владельца работает как раньше.
+✅ В Actions перезапустите последний прогон `deploy-stg` (Re-run) — теперь он зелёный и стенд обновился сам.
+
+## Шаг 9. Финальная проверка контура (= приёмка этапа)
+
+- [ ] `https://mdkarta.online` — вход, лента; плашки нет.
+- [ ] `https://stg.mdkarta.online` — то же + плашка «Тестовый стенд».
+- [ ] Пуш любого коммита в `stg` → Actions зелёные → стенд обновился без ручных действий.
+- [ ] Merge `stg`→`main` → job `deploy-prod` ждёт Approve → после Approve прод обновился.
+- [ ] `systemctl list-timers | grep medarchive` — бэкап 03:00 и prod2stg 04:00 запланированы.
+- [ ] В бакете — только шифрованные объекты; `medarchive-prod2stg` руками отрабатывает.
+- [ ] Существующая PWA работает как раньше.
+- [ ] Ключ rclone-crypt и пароли записаны в надёжном месте вне сервера.
+
+## Если что-то пошло не так
+
+| Симптом | Куда смотреть |
+|---|---|
+| Сервис не стартует | `journalctl -u medarchive-prod -n 50` (обычно — опечатка в `.env`) |
+| Домен не открывается | `dig +short <домен>` → IP верный? `journalctl -u caddy -n 30` (сертификат требует DNS) |
+| Actions деплой красный | лог джобы: SSH до `deploy@<IP_VPS>` проходит? секреты заданы? |
+| Бэкап падает | прогнать `sudo -u medarchive /usr/local/bin/medarchive-backup` руками — ошибка будет в выводе |
+| prod2stg падает | то же руками; частое — нет ни одного бэкапа в бакете |
+
+Любой непонятный вывод — присылайте целиком, разберём.
