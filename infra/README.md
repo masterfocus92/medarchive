@@ -60,15 +60,13 @@ apt update && apt install -y postgresql-common
 apt install -y postgresql-16 postgresql-16-pgvector
 ```
 
-Роли и БД (подставьте свои пароли вместо `CHANGE_ME_PROD` / `CHANGE_ME_STG` — они пойдут в `.env` контуров на шаге 5):
+Роли и БД — по одной команде (heredoc ломается при вставке в терминал; подставьте свои пароли вместо `CHANGE_ME_PROD` / `CHANGE_ME_STG` — они пойдут в `.env` контуров на шаге 5). Ошибка `already exists` на повторном прогоне безвредна:
 
 ```bash
-sudo -u postgres psql <<'SQL'
-CREATE ROLE medcard_prod LOGIN PASSWORD 'CHANGE_ME_PROD';
-CREATE ROLE medcard_stg  LOGIN PASSWORD 'CHANGE_ME_STG';
-CREATE DATABASE medcard_prod OWNER medcard_prod;
-CREATE DATABASE medcard_stg  OWNER medcard_stg;
-SQL
+sudo -u postgres psql -c "CREATE ROLE medcard_prod LOGIN PASSWORD 'CHANGE_ME_PROD';"
+sudo -u postgres psql -c "CREATE ROLE medcard_stg  LOGIN PASSWORD 'CHANGE_ME_STG';"
+sudo -u postgres psql -c "CREATE DATABASE medcard_prod OWNER medcard_prod;"
+sudo -u postgres psql -c "CREATE DATABASE medcard_stg  OWNER medcard_stg;"
 
 # Пароль прод-БД для ночного pg_dump (бэкап идёт от medarchive)
 sudo -u medarchive bash -c 'echo "localhost:5432:medcard_prod:medcard_prod:CHANGE_ME_PROD" > ~/.pgpass && chmod 600 ~/.pgpass'
