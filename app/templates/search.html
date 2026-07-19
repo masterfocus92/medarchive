@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import empty, rec_lite %}
+
+{% block title %}Поиск — Семейная медкарта{% endblock %}
+
+{# Список записей под ответом: «Источники» у ответа, «Похожие записи»
+   у деградаций B4/B5. Один макрос — одна разметка блока. #}
+{% macro source_list(label, items) %}
+<div class="chat-sources">
+  <div class="k">{{ label }}</div>
+  <ul class="feed">
+    {% for source in items %}
+    <li>{{ rec_lite(source, who=source) }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endmacro %}
+
+{% block content %}
+<a class="btn btn-quiet" href="/">‹ В ленту</a>
+
+{% if result is none %}
+{# Приглашение (t₀ потока и B1): пример учит формату вопроса. #}
+{{ empty(
+  "Спросите свою карту",
+  "Своими словами — например, «когда Арине делали манту?». Ответ соберётся из записей семьи, под ним — ссылки на записи-источники."
+) }}
+{% else %}
+<div class="chat">
+  {# Каждый вопрос самостоятелен (❓8): экран показывает текущую пару
+     «вопрос-ответ», история сессии в БД не хранится. #}
+  <p class="chat-q">{{ question }}</p>
+
+  {% if result.kind == "answer" %}
+  <div class="chat-a">
+    <p>{{ result.answer }}</p>
+    {{ source_list("Источники", result.sources) }}
+  </div>
+
+  {% elif result.kind == "not_found" %}
+  {# B2: ретривал пуст — честное «не нашлось», текст говорит, что делать. #}
+  <div class="chat-a"><p>В карте этого не нашлось. Попробуйте спросить другими словами.</p></div>
+
+  {% elif result.kind == "not_found_with_similar" %}
+  {# B5/B6: ответ без опоры на записи не показывается — только похожие. #}
+  <div class="chat-a">
+    <p>В карте этого не нашлось. Попробуйте спросить другими словами — или взгляните на похожие записи: вдруг нужное там.</p>
+    {{ source_list("Похожие записи", result.similar) }}
+  </div>
+
+  {% elif result.kind == "llm_unavailable" %}
+  {# B4: деградация без вранья — retrieval-ядро автономно. #}
+  <div class="chat-a">
+    <p>Ответ сейчас не собрать, но вот записи, похожие на ваш вопрос.</p>
+    {{ source_list("Похожие записи", result.similar) }}
+  </div>
+
+  {% elif result.kind == "unavailable" %}
+  {# B3: эмбеддинг-провайдер недоступен — остальной продукт живёт. #}
+  <div class="chat-a"><p>Поиск сейчас недоступен. Попробуйте позже.</p></div>
+  {% endif %}
+</div>
+{% endif %}
+
+{# Поле вопроса закреплено снизу (action-bar-семейство, вариант chat-bar);
+   «Спросить» — единственная primary этого экрана. #}
+<form method="post" action="/search" class="action-bar chat-bar">
+  <div class="bar-main">
+    <input class="control" name="question" placeholder="Спросите свою карту" autocomplete="off">
+    <button type="submit" class="btn btn-primary">Спросить</button>
+  </div>
+</form>
+{% endblock %}

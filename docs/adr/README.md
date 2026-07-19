@@ -22,3 +22,4 @@
 | [ADR-015](ADR-015-release-contour.md) | Релизный контур: один VPS, изолированные prod/stg, ветки stg/main, деплой одним скриптом, Actions с ручным подтверждением прода | принято |
 | [ADR-016](ADR-016-backups-and-prod2stg.md) | Бэкапы в Yandex Object Storage (rclone crypt, ретенция); стенд восстанавливается из бэкапа — проверка восстановимости и репетиция миграций | принято |
 | [ADR-017](ADR-017-native-postgres-on-vps.md) | На VPS PostgreSQL нативно (PGDG + pgvector), docker остаётся для разработки | принято |
+| [ADR-018](ADR-018-search-embeddings-routerai.md) | Поиск: эмбеддинги через RouterAI (вместо Voyage — изменение стека), таблица record_embeddings, reindex, журнал search_queries | принято |

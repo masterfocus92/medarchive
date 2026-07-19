@@ -292,6 +292,53 @@
   .action-bar .bar-main .btn { width: 100%; }
   .action-bar .bar-helper { font-size: var(--t-caption); color: var(--pencil); text-align: center; }
 
+  /* [+ Э7] Плавающая «Найти» — вход в поиск с ленты (❓4 потока поиска).
+     Единственная плавающая кнопка системы: компактный «ярлычок»-лист над
+     записями, правый низ, выше нижнего бара. Не primary — первичное
+     действие ленты остаётся «Добавить запись». Смещение по правому краю —
+     к контентной колонке (780px, §6), не к краю окна. */
+  .fab {
+    position: fixed; z-index: 6;
+    right: max(var(--s4), calc((100vw - 780px) / 2 + var(--s4)));
+    bottom: 104px; /* над action-bar ленты: бар с паддингами ~88px */
+    display: inline-flex; align-items: center;
+    background: var(--sheet); color: var(--ink);
+    border: var(--hair); border-radius: 999px;
+    padding: var(--s3) var(--s5);
+    font-family: var(--sans); font-size: var(--t-body); font-weight: 500;
+    text-decoration: none; box-shadow: var(--lift-md);
+  }
+  .fab:hover { border-color: var(--pencil); }
+
+  /* [+ Э7] Чат поиска: вопрос — «карандашная» реплика оператора (то, чего
+     нет в документах, — как pencil-note), ответ — «чернильный лист» (факты
+     из записей — как record). Категории «факт/пометка» читаются без подписей. */
+  .chat { display: flex; flex-direction: column; gap: var(--s4); }
+  .chat-q {
+    align-self: flex-end; max-width: 85%;
+    font-family: var(--serif); font-style: italic; color: var(--pencil);
+    border: 1px dashed var(--rule); border-radius: var(--radius);
+    padding: var(--s2) var(--s4);
+  }
+  .chat-a {
+    background: var(--sheet); border: var(--hair); border-radius: var(--radius);
+    padding: var(--s4); box-shadow: var(--lift-sm);
+  }
+  /* Блок источников под ответом: подпись-лейбл + список rec-lite.
+     Ответ без источников не существует (B6 потока). */
+  .chat-sources { margin-top: var(--s4); border-top: 1px dashed var(--rule-soft); padding-top: var(--s3); }
+  .chat-sources .k { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--s2); }
+
+  /* [+ Э7] Принадлежность источника (❓3: поиск семейный) — мини-монограмма
+     + имя пациента его персональным акцентом внутри rec-lite. */
+  .lite-who { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-caption); color: var(--who-accent, var(--pencil)); }
+  .lite-who .mono-badge { width: 22px; height: 22px; font-size: var(--t-caption); border-color: var(--who-accent, var(--rule)); color: var(--who-accent, var(--ink)); }
+
+  /* [+ Э7] Вариант нижнего бара для чата: поле вопроса и «Спросить» в ряд. */
+  .chat-bar .bar-main { flex-direction: row; align-items: center; }
+  .chat-bar .bar-main .control { flex: 1; }
+  .chat-bar .bar-main .btn { width: auto; }
+
   /* [+ Э6.5] Плашка среды — маркер тестового стенда на каждом экране.
      Красный карандаш: предупреждение, не оформление — данные стенда
      перезаписываются ночным синком (ADR-015/016). На проде не существует. */
@@ -619,6 +666,31 @@
     <div class="sec-label"><span>Плашка среды — маркер стенда</span><span class="tag new">новое · Э6.5</span></div>
     <div class="env-banner" style="position:static">Тестовый стенд — данные перезаписываются каждую ночь</div>
     <p class="note">+ Э6.5: единственный экранный элемент релизного контура (ADR-015). Данные стенда неотличимы от боевых и гибнут при каждом синке prod2stg — среда обязана быть видна на каждом экране. Красный карандаш — предупреждение. На проде и в разработке плашки не существует.</p>
+  </section>
+
+  <!-- ПОИСК-ЧАТ (Э7) -->
+  <section>
+    <div class="sec-label"><span>Поиск-чат + плавающая «Найти»</span><span class="tag new">новое · Э7</span></div>
+    <div class="chat" style="max-width:440px;">
+      <p class="chat-q">когда Арине делали манту?</p>
+      <div class="chat-a">
+        <p>Проба Манту — 12 марта 2026, результат отрицательный.</p>
+        <div class="chat-sources">
+          <div class="k">Источники</div>
+          <ul class="feed">
+            <li><a class="rec-lite" href="#">
+              <div class="lite-head"><span class="lite-title">Проба Манту</span><span class="lite-date">12.03.2026</span></div>
+              <div class="lite-meta"><span class="chip">прививка</span><span class="lite-who accent-2"><span class="mono-badge">АИ</span>Арина</span></div>
+            </a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div style="position:relative; max-width:440px; height:96px; border:var(--hair); border-radius:var(--radius); margin-top:var(--s4); overflow:hidden;">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--pencil-soft); font-size:var(--t-small);">…лента записей…</div>
+      <a class="fab" style="position:absolute; right:var(--s4); bottom:var(--s4);" href="#">Найти</a>
+    </div>
+    <p class="note">+ Э7: поиск — чат (❓2 потока поиска). Вопрос — «карандашная» реплика оператора: пометка человека, serif italic с пунктирной рамкой. Ответ — «чернильный лист» с обязательным блоком источников (ответ без источников не существует, B6); источник — существующий rec-lite + новый lite-who: мини-монограмма и имя пациента его персональным акцентом (❓3 — поиск семейный, принадлежность видна без перехода). Плавающая «Найти» (❓4) — единственная плавающая кнопка системы: вход с ленты, правый низ выше нижнего бара, не primary (первичное действие ленты — «Добавить запись»); на пустой ленте не показывается — искать не в чем. Поле вопроса — вариант нижнего бара chat-bar: контрол и «Спросить» в ряд.</p>
   </section>
 
   <!-- ПУСТОЙ ЭКРАН + ПОДТВЕРЖДЕНИЕ -->

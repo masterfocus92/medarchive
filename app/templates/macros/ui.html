@@ -44,6 +44,27 @@
 {%- if kind %}<span class="badge {{ kind }}"><span class="dot"></span>{{ label }}</span>{% endif -%}
 {% endmacro %}
 
+{# Элемент ленты rec-lite (кит v2/Э7) — единственная разметка примитива:
+   лента и источники поиска зовут макрос (второй экран-потребитель появился
+   в Э7 — по правилу §4 разметка съехала из index.html сюда).
+   badge_* — вариант ленты: бейдж носят только неподтверждённые;
+   who — вариант источника поиска (❓3): мини-монограмма + имя пациента
+   его персональным акцентом. r — словарь контекста, не ORM-объект. #}
+{% macro rec_lite(r, badge_kind=None, badge_label=None, who=None) %}
+<a class="rec-lite" href="/records/{{ r.id }}">
+  <div class="lite-head">
+    <span class="lite-title">{{ r.title or "Запись без названия" }}</span>
+    <span class="lite-date">{{ (r.event_date or r.created_at).strftime("%d.%m.%Y") }}</span>
+  </div>
+  <div class="lite-meta">
+    {% if r.record_type %}<span class="chip">{{ r.record_type }}</span>{% endif %}
+    {% if r.clinic %}<span class="lite-clinic">{{ r.clinic }}</span>{% endif %}
+    {% if who %}<span class="lite-who {{ who.accent }}"><span class="mono-badge">{{ who.initials }}</span>{{ who.patient_name }}</span>{% endif %}
+    {{ badge(badge_kind, badge_label) }}
+  </div>
+</a>
+{% endmacro %}
+
 {# Поле ввода = label + control + опциональный helper (примитив кита §4).
    for/id связывают подпись с контролом: в ките пример без связи, но для
    доступности (DESIGN.MD §7) и тач-удобства подпись должна фокусировать поле.

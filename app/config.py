@@ -46,23 +46,34 @@ class Settings(BaseSettings):
     extractor_model: str = ""
     extractor_api_key: str = ""
 
+    # Эмбеддинги поиска (ADR-018). Дефолт disabled: машина без ключа
+    # остаётся рабочей — поиск честно недоступен, остальной продукт живёт.
+    embeddings_provider: Literal["openai_compatible", "disabled"] = "disabled"
+    embeddings_base_url: str = ""
+    embeddings_model: str = ""
+    embeddings_api_key: str = ""
+
+    # Параметры retrieval (❓6 потока поиска): подбираются на реальных
+    # данных, поэтому конфиг, а не константы. Дефолт порога — по замеру
+    # bge-m3 (19.07.2026): релевантное ~0.58, нерелевантное ~0.83.
+    search_top_k: int = 5
+    search_max_distance: float = 0.75
+
     @model_validator(mode="after")
-    def _extractor_config_complete(self):
+    def _ai_config_complete(self):
         # Включённый провайдер с дырявым конфигом — ошибка старта,
-        # а не сюрприз при первом разборе (логика SECRET_KEY).
-        if self.extractor_provider != "disabled":
+        # а не сюрприз при первом разборе/поиске (логика SECRET_KEY).
+        for prefix in ("extractor", "embeddings"):
+            if getattr(self, f"{prefix}_provider") == "disabled":
+                continue
             missing = [
                 name
-                for name, value in (
-                    ("extractor_base_url", self.extractor_base_url),
-                    ("extractor_model", self.extractor_model),
-                    ("extractor_api_key", self.extractor_api_key),
-                )
-                if not value
+                for name in (f"{prefix}_base_url", f"{prefix}_model", f"{prefix}_api_key")
+                if not getattr(self, name)
             ]
             if missing:
                 raise ValueError(
-                    f"extractor_provider={self.extractor_provider}, "
+                    f"{prefix}_provider={getattr(self, f'{prefix}_provider')}, "
                     f"но не заполнено: {', '.join(missing)}"
                 )
         return self
