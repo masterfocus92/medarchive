@@ -12,9 +12,15 @@ STG_DIR=/opt/medarchive/stg
 STG_FILES=/var/lib/medarchive/stg/files
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+# rclone-конфиг живёт у пользователя medarchive (гайд создаёт его там):
+# скрипт работает root'ом, поэтому каждый вызов rclone — от medarchive.
+# 755 на TMP: скачанный дамп должен уметь прочитать ещё и postgres
+# (pg_restore ниже), а пишет его medarchive.
+chown medarchive:medarchive "$TMP" && chmod 755 "$TMP"
+rc() { sudo -u medarchive rclone "$@"; }
 
 # Последний дамп — по имени (db_YYYY-MM-DD.dump сортируется лексикографически).
-LATEST_DUMP="$(rclone lsf "$REMOTE:daily/" --files-only | grep '^db_' | sort | tail -1 || true)"
+LATEST_DUMP="$(rc lsf "$REMOTE:daily/" --files-only | grep '^db_' | sort | tail -1 || true)"
 if [ -z "$LATEST_DUMP" ]; then
   echo "ПРОВАЛ: в хранилище нет ни одного дампа — стенд не тронут" >&2
   exit 1
@@ -23,8 +29,8 @@ STAMP="${LATEST_DUMP#db_}"; STAMP="${STAMP%.dump}"
 FILES_ARCHIVE="files_${STAMP}.tar.gz"
 
 echo "[$(date -Is)] prod2stg: беру бэкап от ${STAMP}"
-rclone copy "$REMOTE:daily/$LATEST_DUMP" "$TMP/" --checksum
-rclone copy "$REMOTE:daily/$FILES_ARCHIVE" "$TMP/" --checksum
+rc copy "$REMOTE:daily/$LATEST_DUMP" "$TMP/" --checksum
+rc copy "$REMOTE:daily/$FILES_ARCHIVE" "$TMP/" --checksum
 [ -s "$TMP/$LATEST_DUMP" ] || { echo "ПРОВАЛ: дамп не скачался — стенд не тронут" >&2; exit 1; }
 [ -s "$TMP/$FILES_ARCHIVE" ] || { echo "ПРОВАЛ: архив файлов не скачался — стенд не тронут" >&2; exit 1; }
 

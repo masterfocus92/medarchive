@@ -170,10 +170,12 @@ systemctl enable --now medarchive-backup.timer medarchive-prod2stg.timer
 
 ```bash
 sudo -u medarchive /usr/local/bin/medarchive-backup
-rclone lsf medarchive-crypt:daily/    # видны db_*.dump и files_*.tar.gz
-rclone lsf yandex:mdkarta-backup -R | head   # а тут — только шифрованная тарабарщина
+sudo -u medarchive rclone lsf medarchive-crypt:daily/    # видны db_*.dump и files_*.tar.gz
+sudo -u medarchive rclone lsf yandex:mdkarta-backup -R | head   # а тут — только шифрованная тарабарщина
 /usr/local/bin/medarchive-prod2stg    # стенд пересобрался из бэкапа
 ```
+
+> Все команды `rclone` — только с `sudo -u medarchive`: конфиг с ключами живёт у этого пользователя, у root его нет.
 
 ✅ Оба листинга сходятся · prod2stg завершился «стенд = прод от <дата>» · на `stg.mdkarta.online` виден контент прода · `systemctl list-timers | grep medarchive` — два таймера с временем следующего запуска.
 
