@@ -9,6 +9,7 @@ from sqlalchemy import Date, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.models import FamilyMember, HealthRecord, ParseStatus
+from app.repositories.embeddings import delete_for_record
 
 FEED_SORTS = ("created", "event")
 
@@ -67,6 +68,9 @@ def soft_delete(session: Session, record: HealthRecord, account) -> None:
     фиксируется: в семье двое операторов, авторство удаления значимо."""
     record.deleted_at = func.now()
     record.deleted_by_account_id = account.id
+    # Вектор поиска гибнет в той же транзакции (Э7): ретривал и так
+    # фильтрует удалённые, но осиротевший вектор — мусор без владельца.
+    delete_for_record(session, record.id)
     session.commit()
 
 

@@ -24,6 +24,7 @@ from app.repositories.members import list_by_family
 from app.repositories.records import get_for_family, soft_delete
 from app.routes.deps import get_app_settings, get_current_account
 from app.routes.pages import templates
+from app.services.indexing import index_record
 from app.services.pipeline import can_retry, run_extraction
 from app.services.profiles import switcher_context
 from app.services.records import (
@@ -111,6 +112,18 @@ def create_record_route(
     if record.parse_status == ParseStatus.UPLOADED:
         background_tasks.add_task(
             run_extraction,
+            record.id,
+            settings=settings,
+            session_factory=request.app.state.session_factory,
+        )
+
+    # Индексация поиска (Э7): запись «только комментарий» подтверждается
+    # прямо при создании (confirmed_at ставит create_record) — это её
+    # первичное подтверждение, экрана проверки у неё не будет. Не поставить
+    # задачу здесь = заметка не ищется до первой правки.
+    if record.confirmed_at is not None:
+        background_tasks.add_task(
+            index_record,
             record.id,
             settings=settings,
             session_factory=request.app.state.session_factory,
@@ -248,6 +261,7 @@ def edit_record_screen(
 def confirm_record(
     record_id: int,
     request: Request,
+    background_tasks: BackgroundTasks,
     account: Annotated[Account, Depends(get_current_account)],
     db: Annotated[Session, Depends(get_session)],
     patient_id: Annotated[int, Form()],
@@ -291,6 +305,16 @@ def confirm_record(
     if record.confirmed_at is None:
         record.confirmed_at = func.now()
     db.commit()
+
+    # Индексация поиска (Э7): первичное подтверждение и правка — один
+    # confirm, обе актуализируют вектор. Фоном после commit'а: провал
+    # индексации не имеет шанса тронуть подтверждение (B7).
+    background_tasks.add_task(
+        index_record,
+        record_id,
+        settings=get_app_settings(request),
+        session_factory=request.app.state.session_factory,
+    )
 
     request.session["flash"] = CONFIRM_TOAST
     # ❓3 потока правки: из режима правки — на карточку (человек хочет видеть

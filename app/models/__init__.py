@@ -16,6 +16,7 @@ from app.models.record import (
     ParseStatus,
     RecordFile,
 )
+from app.models.search import RecordEmbedding, SearchQuery
 
 __all__ = [
     "CONFIRMED_KIND",
@@ -29,5 +30,7 @@ __all__ = [
     "FamilyMember",
     "HealthRecord",
     "ParseStatus",
+    "RecordEmbedding",
     "RecordFile",
+    "SearchQuery",
 ]

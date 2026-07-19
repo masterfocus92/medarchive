@@ -468,6 +468,54 @@ article.record { margin-top: var(--s3); }
 .action-bar .bar-main .btn { width: 100%; }
 .action-bar .bar-helper { font-size: var(--t-caption); color: var(--pencil); text-align: center; }
 
+/* ---------- Поиск-чат (Э7, T7.4) ---------- */
+
+/* Плавающая «Найти» (кит Э7, ❓4 потока поиска): единственная плавающая
+   кнопка системы — вход в поиск с ленты. Не primary: первичное действие
+   ленты остаётся «Добавить запись». Правый край считается от контентной
+   колонки (780px, DESIGN §6), не от края окна. */
+.fab {
+  position: fixed; z-index: 6;
+  right: max(var(--s4), calc((100vw - 780px) / 2 + var(--s4)));
+  bottom: 104px; /* над action-bar ленты: бар с паддингами ~88px */
+  display: inline-flex; align-items: center;
+  background: var(--sheet); color: var(--ink);
+  border: var(--hair); border-radius: 999px;
+  padding: var(--s3) var(--s5);
+  font-family: var(--sans); font-size: var(--t-body); font-weight: 500;
+  text-decoration: none; box-shadow: var(--lift-md);
+}
+.fab:hover { border-color: var(--pencil); }
+
+/* Чат поиска (кит Э7): вопрос — «карандашная» реплика оператора (пометка
+   человека — как pencil-note), ответ — «чернильный лист» (факты из записей —
+   как record). Категории «факт/пометка» читаются без подписей (DESIGN §1). */
+.chat { display: flex; flex-direction: column; gap: var(--s4); }
+.chat-q {
+  align-self: flex-end; max-width: 85%;
+  font-family: var(--serif); font-style: italic; color: var(--pencil);
+  border: 1px dashed var(--rule); border-radius: var(--radius);
+  padding: var(--s2) var(--s4);
+}
+.chat-a {
+  background: var(--sheet); border: var(--hair); border-radius: var(--radius);
+  padding: var(--s4); box-shadow: var(--lift-sm);
+}
+/* Блок источников под ответом: подпись-лейбл + список rec-lite.
+   Ответ без источников не существует (B6 потока). */
+.chat-sources { margin-top: var(--s4); border-top: 1px dashed var(--rule-soft); padding-top: var(--s3); }
+.chat-sources .k { font-family: var(--mono); font-size: var(--t-caption); color: var(--pencil-soft); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--s2); }
+
+/* Принадлежность источника (кит Э7, ❓3: поиск семейный): мини-монограмма
+   + имя пациента его персональным акцентом внутри rec-lite. */
+.lite-who { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-caption); color: var(--who-accent, var(--pencil)); }
+.lite-who .mono-badge { width: 22px; height: 22px; font-size: var(--t-caption); border-color: var(--who-accent, var(--rule)); color: var(--who-accent, var(--ink)); }
+
+/* Вариант нижнего бара для чата (кит Э7): поле вопроса и «Спросить» в ряд. */
+.chat-bar .bar-main { flex-direction: row; align-items: center; }
+.chat-bar .bar-main .control { flex: 1; }
+.chat-bar .bar-main .btn { width: auto; }
+
 /* ---------- Платформа ---------- */
 
 /* animation тоже глушится: пульс бейджа не должен пережить reduced-motion */
