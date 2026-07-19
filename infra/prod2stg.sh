@@ -38,6 +38,11 @@ echo "[$(date -Is)] prod2stg: пересоздаю medcard_stg…"
 systemctl stop medarchive-stg
 sudo -u postgres psql -qc "DROP DATABASE IF EXISTS medcard_stg WITH (FORCE)"
 sudo -u postgres psql -qc "CREATE DATABASE medcard_stg OWNER medcard_stg"
+# Расширение vector (Э7) — суперпользователем: роль medcard_stg создать его
+# не вправе, а alembic upgrade ниже рассчитывает на IF NOT EXISTS (no-op).
+# Нужно, пока прод-дамп без Э7; после — дамп сам восстановит расширение,
+# строка останется безвредной.
+sudo -u postgres psql -d medcard_stg -qc "CREATE EXTENSION IF NOT EXISTS vector"
 # --no-owner --role: объекты прод-роли переезжают под роль стенда.
 sudo -u postgres pg_restore --no-owner --role=medcard_stg -d medcard_stg "$TMP/$LATEST_DUMP"
 
