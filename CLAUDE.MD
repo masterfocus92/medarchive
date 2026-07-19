@@ -25,7 +25,7 @@
 
 ## Стек — зафиксирован, альтернативы не предлагать
 
-Python 3.12 + uv · FastAPI + Jinja2 + htmx (server-rendered, без SPA) · PostgreSQL 16 + pgvector (docker-compose) · Alembic · Claude API (разбор) · Voyage AI (эмбеддинги) · файлы на диске (`FILES_DIR`) · Ruff + pytest + pre-commit · деплой self-host VPS.
+Python 3.12 + uv · FastAPI + Jinja2 + htmx (server-rendered, без SPA) · PostgreSQL 16 + pgvector (docker-compose в dev, нативный на VPS — ADR-017) · Alembic · LLM и эмбеддинги — через RouterAI, OpenAI-совместимый API (ADR-014/018; Voyage заменён — недоступен по оплате) · файлы на диске (`FILES_DIR`) · Ruff + pytest + pre-commit · деплой self-host VPS (ADR-015).
 
 ## Этапы
 
