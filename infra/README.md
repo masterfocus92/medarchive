@@ -68,6 +68,11 @@ sudo -u postgres psql -c "CREATE ROLE medcard_stg  LOGIN PASSWORD 'CHANGE_ME_STG
 sudo -u postgres psql -c "CREATE DATABASE medcard_prod OWNER medcard_prod;"
 sudo -u postgres psql -c "CREATE DATABASE medcard_stg  OWNER medcard_stg;"
 
+# Расширение vector (Э7): создаёт только суперпользователь — роли контуров
+# не смогут, а миграция d4e5f6a7b8c9 рассчитывает на IF NOT EXISTS (no-op).
+sudo -u postgres psql -d medcard_prod -c "CREATE EXTENSION IF NOT EXISTS vector;"
+sudo -u postgres psql -d medcard_stg  -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
 # Пароль прод-БД для ночного pg_dump (бэкап идёт от medarchive)
 sudo -u medarchive bash -c 'echo "localhost:5432:medcard_prod:medcard_prod:CHANGE_ME_PROD" > ~/.pgpass && chmod 600 ~/.pgpass'
 ```
