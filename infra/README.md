@@ -188,6 +188,10 @@ cp /opt/medarchive/prod/infra/deploy.sh /usr/local/bin/medarchive-deploy && chmo
 
 sudo -u deploy ssh-keygen -t ed25519 -N '' -f /home/deploy/.ssh/id_ci
 cat /home/deploy/.ssh/id_ci.pub >> /home/deploy/.ssh/authorized_keys
+# Владелец и права — критичны: authorized_keys, созданный root'ом, sshd
+# молча отвергнет (StrictModes) — будет Permission denied (publickey).
+chown -R deploy:deploy /home/deploy/.ssh
+chmod 700 /home/deploy/.ssh
 chmod 600 /home/deploy/.ssh/authorized_keys
 echo 'deploy ALL=(root) NOPASSWD: /usr/local/bin/medarchive-deploy' > /etc/sudoers.d/medarchive-deploy
 chmod 440 /etc/sudoers.d/medarchive-deploy
