@@ -139,20 +139,19 @@ ufw allow OpenSSH && ufw allow 80,443/tcp && ufw enable
 
 ## Шаг 7. Бэкапы и prod2stg **[VPS]**
 
-rclone: S3-remote на бакет + crypt-обёртка (в облако уходит только шифрованное). Пароль шифрования придумайте и **сохраните оффлайн** (второй `CHANGE_ME_SALT` — тоже): без них бэкапы нечитаемы, это самый критический секрет контура.
+rclone: S3-remote на бакет + crypt-обёртка (в облако уходит только шифрованное). Пароль шифрования и соль придумайте и **сохраните оффлайн**: без них бэкапы нечитаемы, это самый критический секрет контура.
+
+> Значения подставляются **только в терминале** — этот файл не редактировать: он часть публичного репозитория, секретам в нём не место. Синтаксис `ключ значение` (через пробел, одной строкой) работает и в старом rclone из apt Ubuntu 22.04, и в новых версиях.
 
 ```bash
 apt install -y rclone
 
-sudo -u medarchive rclone config create yandex s3 \
-  provider=Other endpoint=storage.yandexcloud.net region=ru-central1 \
-  access_key_id=<ACCESS_KEY из шага 2> secret_access_key=<SECRET_KEY_S3 из шага 2>
+sudo -u medarchive rclone config create yandex s3 provider Other endpoint storage.yandexcloud.net region ru-central1 access_key_id ACCESS_KEY_ИЗ_ШАГА_2 secret_access_key СЕКРЕТ_ИЗ_ШАГА_2
 
-PASS=$(rclone obscure 'CHANGE_ME_CRYPT_PASSWORD')
-SALT=$(rclone obscure 'CHANGE_ME_SALT')
-sudo -u medarchive rclone config create medarchive-crypt crypt \
-  remote=yandex:mdkarta-backup password=$PASS password2=$SALT
+sudo -u medarchive rclone config create medarchive-crypt crypt remote yandex:mdkarta-backup password 'CHANGE_ME_CRYPT_PASSWORD' password2 'CHANGE_ME_SALT' --obscure
 ```
+
+✅ Промежуточная проверка: `sudo -u medarchive rclone lsf medarchive-crypt:` отрабатывает без ошибок (вывод пустой — бакет пока пуст).
 
 Скрипты и таймеры (скрипты живут в `/usr/local/bin` и деплоем не обновляются — при их изменении в репо повторить эти `cp`):
 
